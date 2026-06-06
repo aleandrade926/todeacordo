@@ -18,10 +18,12 @@ export default function TaxManagers() {
       {/* Navbar */}
       <nav className="fixed w-full z-50 bg-[#0a0a0c]/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
-              <Network className="w-5 h-5 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo-icon.png" 
+              className="h-10 w-10 object-contain rounded-lg" 
+              alt="Tax Managers Logo" 
+            />
             <span className="text-xl font-bold tracking-tight text-white">Tax Managers</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
@@ -49,11 +51,11 @@ export default function TaxManagers() {
             </div>
             
             <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-8">
-              Créditos fiscais e Reforma Tributária <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">sem achismo.</span>
+              A Reforma Tributária exige mais do que adaptação. <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Exige inteligência fiscal.</span>
             </h1>
             
             <p className="text-lg md:text-xl text-slate-400 leading-relaxed mb-10 max-w-2xl">
-              Identificamos oportunidades tributárias, saneamos créditos fiscais e estruturamos dossiês técnicos para empresas que precisam atravessar a Reforma Tributária com segurança, caixa e governança.
+              A Tax Managers identifica oportunidades, saneia créditos e estrutura dossiês técnicos para empresas que precisam atravessar a transição CBS/IBS com segurança, caixa e governança.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -63,6 +65,16 @@ export default function TaxManagers() {
               </a>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Urgency Section */}
+      <section className="py-24 bg-[#0a0a0c]">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">2026/2027: a janela de saneamento fiscal começou.</h2>
+          <p className="text-xl text-slate-400 max-w-4xl mx-auto leading-relaxed">
+            Com a transição para CBS e IBS, créditos legados, parametrizações fiscais, documentos eletrônicos e bases de cálculo precisam ser revisados antes que inconsistências virem perda de caixa, glosa ou retrabalho sistêmico.
+          </p>
         </div>
       </section>
 
@@ -77,9 +89,9 @@ export default function TaxManagers() {
               </p>
               <ul className="space-y-4">
                 {[
-                  "Complexidade na migração de regimes",
-                  "Riscos de glosa por inconsistência documental",
-                  "Perda de oportunidades na virada do modelo"
+                  "Complexidade na transição para CBS/IBS",
+                  "Risco de glosa por crédito mal documentado",
+                  "Perda de créditos por parametrização fiscal incorreta"
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-slate-300">
                     <div className="mt-1 bg-red-500/10 p-1 rounded border border-red-500/20">
@@ -134,7 +146,7 @@ export default function TaxManagers() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Linhas de atuação técnica</h2>
-            <p className="text-slate-400">Abordagem consultiva com lastro em dados e estrita conformidade legal.</p>
+            <p className="text-slate-400">Análise fiscal com dados, dossiê técnico e conformidade legal.</p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -210,6 +222,16 @@ export default function TaxManagers() {
         </div>
       </section>
 
+      {/* Trust Section */}
+      <section className="py-16 bg-gradient-to-r from-blue-900/10 to-cyan-900/10 border-y border-white/5">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Experiência aplicada desde 2010.</h2>
+          <p className="text-lg text-slate-400 max-w-3xl mx-auto">
+            Atuação em projetos de revisão fiscal, créditos tributários, oportunidades de IRPJ/CSLL, PIS/Cofins e estruturação de dossiês técnicos para empresas de médio e grande porte.
+          </p>
+        </div>
+      </section>
+
       {/* Commercial Model & CTA */}
       <section id="contato" className="py-24 relative">
         <div className="max-w-7xl mx-auto px-6">
@@ -223,11 +245,11 @@ export default function TaxManagers() {
               </div>
               
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Alinhamento de interesses com a sua empresa.
+                Você não paga por tese. Paga por valor aproveitado.
               </h2>
               
               <p className="text-slate-400 mb-8 text-lg">
-                Atuamos mediante mapeamento técnico robusto. Sem aventuras jurídicas. Entregamos soluções onde o aproveitamento é sujeito à validação estrita e aprovação da empresa.
+                Oportunidades identificadas só geram remuneração quando aprovadas e efetivamente aproveitadas pela empresa, conforme contrato.
               </p>
               
               <div className="space-y-4 mb-10">
@@ -289,9 +311,11 @@ export default function TaxManagers() {
       <footer className="border-t border-white/5 bg-[#050505] py-12">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
-              <Network className="w-3 h-3 text-slate-400" />
-            </div>
+            <img 
+              src="/logo-icon.png" 
+              className="h-8 w-8 object-contain rounded-md" 
+              alt="Tax Managers Logo" 
+            />
             <span className="text-sm font-bold tracking-tight text-slate-400">Tax Managers</span>
           </div>
           

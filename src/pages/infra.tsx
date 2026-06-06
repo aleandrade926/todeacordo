@@ -253,6 +253,19 @@ const InfraPage = () => {
         </div>
       </section>
 
+      {/* Bloco Discreto Tributário */}
+      <section className="infra-tax-highlight" style={{ padding: '3rem 2rem', backgroundColor: '#0a101d', borderTop: '1px solid rgba(212,175,55,0.1)' }}>
+        <div className="infra-tax-content" style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '2rem', background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%)' }}>
+          <h3 style={{ color: '#D4AF37', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Estrutura fiscal e regulatória desde a origem</h3>
+          <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+            Projetos de geração distribuída, recarga, storage e infraestrutura energética não dependem apenas do ponto físico. A viabilidade também passa por CAPEX, contratos, créditos, depreciação, regime tributário, conexão e documentação técnica.
+          </p>
+          <span style={{ display: 'inline-block', fontSize: '0.875rem', color: '#64748b', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', width: '80%' }}>
+            "A infraestrutura começa no endereço, mas se sustenta na estrutura jurídica, fiscal e regulatória."
+          </span>
+        </div>
+      </section>
+
       {/* Como Funciona Section */}
       <section className="infra-engenharia">
         <div className="infra-engenharia-content">
