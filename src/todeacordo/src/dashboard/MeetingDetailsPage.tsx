@@ -222,7 +222,7 @@ export const MeetingDetailsPage = () => {
                             <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
                               <span className="text-indigo-500">→</span> 
                               <div>
-                                <span className="font-bold">{typeof o === 'string' ? '' : o.owner + ':'}</span> {typeof o === 'string' ? o : o.text}
+                                <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
                               </div>
                             </li>
                           ))}
