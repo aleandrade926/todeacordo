@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "TaxManagers Intelligence",
+  "version": "1.0.19",
+  "description": "Conector de perfis corporativos e inteligência tributária para mapeamento de oportunidades estratégicas.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Mapear Oportunidade",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "https://*.linkedin.com/*"
+  ]
+}

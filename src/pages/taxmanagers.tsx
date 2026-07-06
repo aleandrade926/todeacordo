@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "wouter";
 import { 
   ShieldCheck, 
   BarChart3, 
@@ -85,7 +86,7 @@ export default function TaxManagers() {
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">A Reforma Tributária muda o jogo dos créditos.</h2>
               <p className="text-slate-400 mb-6 text-lg leading-relaxed">
-                As regras de transição exigem governança e precisão. O que antes era uma tese contábil, hoje exige análise preditiva de dados e adequação imediata aos novos modelos de IBS e CBS.
+                As regras de transição exigem governança e precisão. O que antes era apenas uma análise contábil conceitual, hoje exige análise preditiva de dados e adequação imediata aos novos modelos de IBS e CBS.
               </p>
               <ul className="space-y-4">
                 {[
@@ -245,11 +246,11 @@ export default function TaxManagers() {
               </div>
               
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Você não paga por tese. Paga por valor aproveitado.
+                Honorários alinhados ao efetivo aproveitamento econômico.
               </h2>
               
               <p className="text-slate-400 mb-8 text-lg">
-                Oportunidades identificadas só geram remuneração quando aprovadas e efetivamente aproveitadas pela empresa, conforme contrato.
+                A remuneração do projeto é vinculada à homologação e ao aproveitamento seguro das oportunidades mapeadas, conforme pactuado em contrato.
               </p>
               
               <div className="space-y-4 mb-10">
@@ -319,8 +320,13 @@ export default function TaxManagers() {
             <span className="text-sm font-bold tracking-tight text-slate-400">Tax Managers</span>
           </div>
           
-          <div className="text-slate-600 text-sm">
-            &copy; {new Date().getFullYear()} Tax Managers. Todos os direitos reservados.
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 text-sm text-slate-600">
+            <Link href="/taxmanagers/politica-de-privacidade" className="hover:text-cyan-400 transition-colors">
+              Política de Privacidade
+            </Link>
+            <span>
+              &copy; {new Date().getFullYear()} Tax Managers. Todos os direitos reservados.
+            </span>
           </div>
         </div>
       </footer>

@@ -1,0 +1,154 @@
+[2026-06-16 11:50:39.676396] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 95, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-16 13:27:12.654220] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 95, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-16 14:56:50.867146] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 95, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-16 14:56:51.408747] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 95, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-16 14:56:51.944712] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 95, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-19 11:35:34.888967] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 116, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-19 13:57:19.377528] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 116, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-19 14:36:28.232825] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 116, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-19 14:45:53.322067] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 116, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-19 15:33:45.654812] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 116, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+
+[2026-06-19 21:00:19.392173] Erro SSH Exception: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+Traceback (most recent call last):
+  File "C:\Users\Alexandre\masterkey-frontend\painel.py", line 145, in fetch_vps_files
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, encoding='utf-8', errors='replace')
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1219, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandre\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1640, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['ssh', '-i', 'C:\\Users\\Alexandre\\.ssh\\oracle-vps.key', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=NUL', 'ubuntu@147.15.112.40', 'ls -la /home/ubuntu/recebidos/']' timed out after 5 seconds
+

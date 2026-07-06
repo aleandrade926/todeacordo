@@ -1,0 +1,42 @@
+const fs = require('fs');
+const appOrigin = 'https://app.taxmanagers.com.br';
+const _bmPart1 = `javascript:(function(){try{` +
+  `let n=document.querySelector('h1.text-heading-xlarge')||document.querySelector('.pv-text-details__left-panel h1')||document.querySelector('.text-heading-xlarge')||document.querySelector('main h1')||document.querySelector('h1');` +
+  `let name=n?n.innerText.trim():'';` +
+  `if(!name||name.length<2){const h1s=Array.from(document.querySelectorAll('h1'));const vh1=h1s.find(h=>h.innerText.trim().length>1);if(vh1)name=vh1.innerText.trim();}` +
+  `let r=document.querySelector('.pv-text-details__left-panel .text-body-medium')||document.querySelector('.text-body-medium.break-words')||document.querySelector('main .text-body-medium')||document.querySelector('.text-body-medium');` +
+  `let rr=r?r.innerText.trim():'';` +
+  `if(!rr){const hl=document.querySelector('[data-field="headline"]')||document.querySelector('.pv-text-details__left-panel div');if(hl)rr=hl.innerText.trim();}` +
+  `let role=rr,company='';` +
+  `if(rr.includes(' at ')){[role,company]=rr.split(' at ').map(s=>s.trim());}else if(rr.includes(' na ')){[role,company]=rr.split(' na ').map(s=>s.trim());}else if(rr.includes(' no ')){[role,company]=rr.split(' no ').map(s=>s.trim());}else if(rr.includes(' em ')){[role,company]=rr.split(' em ').map(s=>s.trim());}` +
+  `if(!name){name=prompt('Nao conseguimos capturar o Nome. Digite o nome do lead:');if(!name)return;name=name.trim();}` +
+  `if(!role){const uc=prompt('Digite o cargo e empresa (ex: Socio na Consultoria X):');if(uc){rr=uc.trim();role=rr;if(rr.includes(' na ')){[role,company]=rr.split(' na ').map(s=>s.trim());}else if(rr.includes(' at ')){[role,company]=rr.split(' at ').map(s=>s.trim());}}}` +
+  `const url=window.location.href;` +
+  `let email='',phone='',birthday='';` +
+  `const em=Array.from(document.querySelectorAll('a')).find(a=>a.href.startsWith('mailto:'));if(em)email=em.href.replace('mailto:','').trim();` +
+  `const ph=document.querySelector('.ci-phone,[class*=phone]');if(ph)phone=ph.innerText.replace(/Telefone|Celular|Trabalho/gi,'').trim();` +
+  `let ch='';` +
+  `const bub=document.querySelector('.msg-overlay-conversation-bubble--is-focused,.msg-thread');` +
+  `const msgSel='.msg-s-message-list__event,.msg-s-event-listitem';` +
+  `const getMsgs=function(root){const msgs=root.querySelectorAll(msgSel);if(!msgs.length)return'';return Array.from(msgs).map(function(el){const sn=el.querySelector('.msg-s-message-group__name,[class*=name]');const s=sn?sn.innerText.trim():'Contato';const tn=el.querySelector('.msg-s-event-listitem__body,[class*=body]');const t=tn?tn.innerText.trim():'';return t?s+': '+t:'';}).filter(function(t){return t!=='';}).slice(-8).join('\\n');};` +
+  `ch=bub?getMsgs(bub):getMsgs(document);` +
+  `let inst=prompt('Capturado: '+name+' | '+(company?role+' na '+company:role)+'\\n\\nQual acao?\\n1 - Importar\\n2 - Curtiu Artigo\\n3 - Assinou Newsletter\\n4 - Respondeu Chat\\n5 - Aceitou Conexao\\n\\nOu COLE A CONVERSA aqui:','1');` +
+  `if(!inst)return;inst=inst.trim();` +
+  `let act='Importado';` +
+  `if(inst==='1')act='Importado';else if(inst==='2')act='Curtiu Artigo';else if(inst==='3')act='Assinou Newsletter';else if(inst==='4')act='Respondeu Chat';else if(inst==='5')act='Aceitou Conexao';else if(inst.length>5){act='Respondeu Chat';ch=inst;if(ch.length>10000)ch=ch.substring(ch.length-10000);}`;
+
+const _bmPart2 = `const targetOrigin='` + appOrigin + `';` +
+  `const iu=targetOrigin+'/taxmanagers/app/import?name='+encodeURIComponent(name)+'&role='+encodeURIComponent(role)+'&company='+encodeURIComponent(company)+'&url='+encodeURIComponent(url)+'&action='+encodeURIComponent(act);` +
+  `const popup=window.open(iu,'_blank','width=400,height=300');` +
+  `if(!popup){alert('Popup bloqueado! Permita popups para este site e tente novamente.');return;}` +
+  `window.addEventListener('message',function handler(event){` +
+    `if(event.source===popup&&event.data==='ready'){` +
+      `popup.postMessage({type:'lead_data',name:name,role:role,company:company,url:url,action:act,email:email,phone:phone,birthday:birthday,chat_history:ch},targetOrigin);` +
+      `window.removeEventListener('message',handler);` +
+    `}` +
+  `});` +
+  `}catch(err){alert('Erro no bookmarklet: '+err);}})()`;
+
+const bookmarkletUrl = _bmPart1 + _bmPart2;
+fs.writeFileSync('bm_test.js', bookmarkletUrl);
+console.log(bookmarkletUrl.includes('\n') ? 'HAS NEWLINES' : 'NO NEWLINES');

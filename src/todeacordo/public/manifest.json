@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "ToDeAcordo",
+  "version": "1.0.0",
+  "description": "Transforme reuniões do Google Meet em consenso.",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "activeTab",
+    "tabCapture"
+  ],
+  "host_permissions": [
+    "*://meet.google.com/*",
+    "http://127.0.0.1:3000/*",
+    "http://localhost:3000/*",
+    "https://app.taxmanagers.com.br/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://meet.google.com/*"],
+      "js": ["content-script.js"]
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "icons": {
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+  "action": {
+    "default_title": "Abrir ToDeAcordo",
+    "default_icon": {
+      "16": "icon-16.png",
+      "32": "icon-32.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sidepanel.html",
+        "assets/*",
+        "*.js",
+        "*.css"
+      ],
+      "matches": [
+        "*://meet.google.com/*"
+      ]
+    }
+  ]
+}

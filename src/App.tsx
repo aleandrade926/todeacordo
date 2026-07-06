@@ -14,6 +14,8 @@ import Shortcuts from "./pages/shortcuts";
 import AuthPage from "./pages/auth-page";
 import InfraPage from "./pages/infra";
 import TaxManagers from "./pages/taxmanagers";
+import TaxManagersPrivacy from "./pages/taxmanagers-privacy";
+import TaxManagersApp from "./pages/taxmanagers-app";
 import Sidebar from "./components/sidebar";
 import { useIsMobile } from "./hooks/use-mobile";
 import { useState } from "react";
@@ -47,6 +49,16 @@ function App() {
   // Rota independente Tax Managers
   if (location === "/taxmanagers") {
     return <TaxManagers />;
+  }
+
+  // Rota independente Tax Managers Privacidade
+  if (location === "/taxmanagers/politica-de-privacidade" || location === "/taxmanagers/privacidade") {
+    return <TaxManagersPrivacy />;
+  }
+
+  // Rota independente Tax Managers App Portal
+  if (location === "/" || location.startsWith("/app") || location.startsWith("/taxmanagers/app")) {
+    return <TaxManagersApp />;
   }
 
   return (

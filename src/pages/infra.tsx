@@ -168,14 +168,14 @@ const InfraPage = () => {
       <section className="infra-arbitragem">
         <div className="infra-arbitragem-content">
           <div className="infra-section-header-left">
-            <span className="infra-pre-title">TESE EXCLUSIVA</span>
+            <span className="infra-pre-title">ESTRATÉGIA EXCLUSIVA</span>
             <h2 className="infra-section-title-left">Arbitragem de CEP</h2>
           </div>
           <div className="infra-arbitragem-grid">
             <div className="infra-arbitragem-desc-block">
               <div className="infra-arbitragem-desc">
                 <p>
-                  A disputa imobiliária por terrenos nos principais eixos logísticos urbanos inflaciona o custo de implantação de frotas e hubs tecnológicos. Nossa tese de **Arbitragem de CEP** consiste no garimpo sistemático de áreas industriais e rurais subutilizadas em municípios de pequeno porte (micromunicípios).
+                  A disputa imobiliária por terrenos nos principais eixos logísticos urbanos inflaciona o custo de implantação de frotas e hubs tecnológicos. Nossa estratégia de **Arbitragem de CEP** consiste no garimpo sistemático de áreas industriais e rurais subutilizadas em municípios de pequeno porte (micromunicípios).
                 </p>
                 <br />
                 <p>
