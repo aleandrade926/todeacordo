@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getConsensusForMeeting, saveConsensus } from '../storage/consensusStorage';
 import type { ConsensusObject, TranscriptSegment } from '../types';
 import { getTranscriptForMeeting } from '../storage/transcriptStorage';
 import { generateConsensusFromTranscript } from '../ai/consensusExtractor';
 import { getMeeting } from '../storage/meetingStorage';
+
+// Detect if running inside Chrome Extension or on web
+const isExtensionContext = () => window.location.protocol === 'chrome-extension:';
+const getBaseUrl = () => isExtensionContext() ? 'index.html' : '/app';
 
 export const MeetingDetailsPage = () => {
   const [consensus, setConsensus] = useState<ConsensusObject | null>(null);
@@ -11,23 +15,27 @@ export const MeetingDetailsPage = () => {
   const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'transcricao' | 'chat' | 'acordos' | 'notas'>('transcricao');
-
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentMeetingId, setCurrentMeetingId] = useState<string>('');
+  const autoGenerateRef = useRef(false);
 
   useEffect(() => {
     let meetingId = '';
     const urlParams = new URLSearchParams(window.location.search);
     const route = urlParams.get('route');
     if (route && route.startsWith('/meeting/')) {
-        meetingId = route.replace('/meeting/', '');
+        meetingId = route.replace('/meeting/', '').split('&')[0]; // strip any extra params
     } else {
         const pathParts = window.location.pathname.split('/');
         meetingId = pathParts[pathParts.length - 1];
     }
-    
+
     if (meetingId) {
-      loadData(meetingId).then((hasConsensus) => {
-          if (!hasConsensus && urlParams.get('autoGenerate') === 'true') {
+      setCurrentMeetingId(meetingId);
+      const shouldAutoGenerate = urlParams.get('autoGenerate') === 'true';
+      loadData(meetingId).then((hasRealConsensus) => {
+          if ((!hasRealConsensus || shouldAutoGenerate) && shouldAutoGenerate && !autoGenerateRef.current) {
+              autoGenerateRef.current = true;
               handleAutoGenerate(meetingId);
           }
       });
@@ -51,7 +59,9 @@ export const MeetingDetailsPage = () => {
         setTranscript(cData.transcript_segments);
       }
 
-      return !!cData;
+      // Consider consensus "real" only if it has actual decisions or obligations
+      const hasContent = (cData?.decisions?.length ?? 0) > 0 || (cData?.obligations?.length ?? 0) > 0;
+      return hasContent;
     } catch (e) {
       console.error(e);
       return false;
@@ -61,23 +71,26 @@ export const MeetingDetailsPage = () => {
   };
 
   const handleAutoGenerate = async (mId: string) => {
+      const id = mId || currentMeetingId;
+      if (!id) { console.error('Meeting ID missing for generation'); return; }
       setIsGenerating(true);
       setActiveTab('acordos');
       try {
-          const tData = await getTranscriptForMeeting(mId);
+          const tData = await getTranscriptForMeeting(id);
           if (!tData || tData.length === 0) {
               console.log('Nenhum transcrito encontrado para gerar consenso.');
+              setIsGenerating(false);
               return;
           }
           
           const result = await generateConsensusFromTranscript({
-              meetingId: mId,
+              meetingId: id,
               sourcePlatform: 'google-meet',
               participants: [],
               segments: tData
           });
 
-          const finalResult = { ...result, meeting_id: mId, id: result.id || mId } as ConsensusObject;
+          const finalResult = { ...result, meeting_id: id, id: result.id || id } as ConsensusObject;
 
           await saveConsensus(finalResult);
           setConsensus(finalResult);
@@ -122,7 +135,11 @@ export const MeetingDetailsPage = () => {
             <span className="font-bold text-slate-900">{meeting?.title || consensus?.meeting_id || meeting?.id || 'Reunião Importante'}</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors" onClick={() => window.open('index.html?route=/valida/' + (consensus?.meeting_id || meeting?.id), '_blank')}>
+            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors" onClick={() => {
+              const id = consensus?.meeting_id || meeting?.id || currentMeetingId;
+              const base = getBaseUrl();
+              window.open(`${base}?route=/valida/${id}`, '_blank');
+            }}>
               Gerar Link de Validação
             </button>
           </div>
@@ -201,45 +218,53 @@ export const MeetingDetailsPage = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-slate-900">Acordos Consolidados</h2>
-                    <a href={`index.html?route=/valida/${consensus?.meeting_id || meeting?.id}`} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-800">Ver Página de Validação ↗</a>
+                    <a href={`${getBaseUrl()}?route=/valida/${consensus?.meeting_id || meeting?.id || currentMeetingId}`} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-800">Ver Página de Validação ↗</a>
                   </div>
-                  {consensus ? (
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
-                        <ul className="space-y-2">
-                          {consensus.decisions?.map((d: any, i) => (
-                            <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                              <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
-                            </li>
-                          ))}
-                        </ul>
+                  {(() => {
+                    const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
+                    if (!hasContent) {
+                      return (
+                        <div className="text-center py-12">
+                          <p className="text-slate-500 mb-6">
+                            {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcrição salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa ainda.'}
+                          </p>
+                          <button
+                            onClick={() => handleAutoGenerate(currentMeetingId || meeting?.id)}
+                            className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 mx-auto border border-amber-300"
+                          >
+                            <span>🧠</span> Gerar Entendimento com IA
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
+                          <ul className="space-y-2">
+                            {consensus!.decisions?.map((d: any, i) => (
+                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Próximos Passos (Obrigações)</h3>
+                          <ul className="space-y-2">
+                            {consensus!.obligations?.map((o: any, i) => (
+                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                <span className="text-indigo-500">→</span>
+                                <div>
+                                  <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Próximos Passos (Obrigações)</h3>
-                        <ul className="space-y-2">
-                          {consensus.obligations?.map((o: any, i) => (
-                            <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                              <span className="text-indigo-500">→</span> 
-                              <div>
-                                <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  ) : (
-                     <div className="text-center py-12">
-                       <p className="text-slate-500 mb-6">Nenhum entendimento ou acordo foi gerado para esta conversa ainda.</p>
-                       <button 
-                         onClick={() => handleAutoGenerate(meeting?.id)}
-                         className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 mx-auto border border-amber-300"
-                       >
-                         <span>🧠</span> Gerar Entendimento com IA
-                       </button>
-                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -267,7 +292,11 @@ export const MeetingDetailsPage = () => {
             </div>
             
             <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-colors" onClick={() => window.open('index.html?route=/valida/' + (consensus?.meeting_id || meeting?.id), '_blank')}>
+              <button className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-colors" onClick={() => {
+                const id = consensus?.meeting_id || meeting?.id || currentMeetingId;
+                const base = getBaseUrl();
+                window.open(`${base}?route=/valida/${id}`, '_blank');
+              }}>
                 <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                 Compartilhe esta reunião
               </button>
