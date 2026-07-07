@@ -87,10 +87,10 @@ const DashboardApp = () => {
       const validMeetings = allMeetings.filter((m: any) => m.status !== 'cleared').sort((a: any, b: any) => b.started_at - a.started_at);
       setMeetings(validMeetings);
 
-      // Detects orphan sessions (active but without consensus — e.g. battery died)
+      // Detects orphan sessions (has segments, but no consensus generated — e.g. battery died or crashed)
       const orphans = [];
       for (const m of allMeetings) {
-        if ((m.status === 'active' || m.is_active) && !m.consensus_object_id) {
+        if (!m.consensus_object_id && m.status !== 'cleared') {
           const segs = await getTranscriptForMeeting(m.id);
           if (segs.length > 0) {
             orphans.push({ ...m, segmentCount: segs.length });
