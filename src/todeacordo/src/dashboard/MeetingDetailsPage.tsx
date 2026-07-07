@@ -8,6 +8,13 @@ import { getMeeting } from '../storage/meetingStorage';
 // Detect if running inside Chrome Extension or on web
 const isExtensionContext = () => window.location.protocol === 'chrome-extension:';
 const getBaseUrl = () => isExtensionContext() ? 'index.html' : '/app';
+const getValidationUrl = (meetingId: string) => {
+  if (isExtensionContext()) {
+    return `index.html?route=/valida/${meetingId}`;
+  }
+  return `/app?route=/valida/${meetingId}`;
+};
+const getHomeUrl = () => isExtensionContext() ? 'index.html' : '/app';
 
 export const MeetingDetailsPage = () => {
   const [consensus, setConsensus] = useState<ConsensusObject | null>(null);
@@ -105,6 +112,9 @@ export const MeetingDetailsPage = () => {
   if (isGenerating) return <div className="flex h-screen items-center justify-center font-bold text-indigo-600">Gerando consolidado da reunião (ToDeAcordo AI)...</div>;
   if (!meeting && !consensus && transcript.length === 0) return <div className="p-8 text-center">Reunião não encontrada.</div>;
 
+  const validationUrl = getValidationUrl(consensus?.meeting_id || meeting?.id || currentMeetingId);
+  const homeUrl = getHomeUrl();
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Left Sidebar */}
@@ -115,8 +125,8 @@ export const MeetingDetailsPage = () => {
         </div>
         <nav className="flex-1 px-4 space-y-1">
 
-          <a href="index.html" className="flex items-center gap-3 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg font-medium text-sm transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <a href={homeUrl} className="flex items-center gap-3 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg font-medium text-sm transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2m0 0V7a2 2 0 00-2-2m0 0h-2.5a2 2 0 00-1 .333M9 5h0m0 0H7a2 2 0 00-2 2v6a2 2 0 002 2m0 0h2m0 0h2.5a2 2 0 001-.333M9 5a2 2 0 002-2m0 0V3"></path></svg>
             Minhas Reuniões
           </a>
         </nav>
@@ -130,15 +140,13 @@ export const MeetingDetailsPage = () => {
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 justify-between shrink-0">
           <div className="flex items-center gap-2 text-sm">
-            <a href="index.html" className="text-slate-500 hover:text-slate-900">Minhas Reuniões</a>
+            <a href={homeUrl} className="text-slate-500 hover:text-slate-900">Minhas Reuniões</a>
             <span className="text-slate-300">/</span>
             <span className="font-bold text-slate-900">{meeting?.title || consensus?.meeting_id || meeting?.id || 'Reunião Importante'}</span>
           </div>
           <div className="flex items-center gap-3">
             <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors" onClick={() => {
-              const id = consensus?.meeting_id || meeting?.id || currentMeetingId;
-              const base = getBaseUrl();
-              window.open(`${base}?route=/valida/${id}`, '_blank');
+              window.open(validationUrl, '_blank');
             }}>
               Gerar Link de Validação
             </button>
@@ -206,7 +214,7 @@ export const MeetingDetailsPage = () => {
                   ) : (
                       <div className="text-center py-12 text-slate-500">
                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                          <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 13H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14-7h.01M7 7a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </div>
                         <p>Transcrição ainda não disponível.</p>
                       </div>
@@ -218,7 +226,9 @@ export const MeetingDetailsPage = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-slate-900">Acordos Consolidados</h2>
-                    <a href={`${getBaseUrl()}?route=/valida/${consensus?.meeting_id || meeting?.id || currentMeetingId}`} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-800">Ver Página de Validação ↗</a>
+                    <a href={validationUrl} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                      Compartilhar →
+                    </a>
                   </div>
                   {(() => {
                     const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
@@ -226,11 +236,11 @@ export const MeetingDetailsPage = () => {
                       return (
                         <div className="text-center py-12">
                           <p className="text-slate-500 mb-6">
-                            {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcrição salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa ainda.'}
+                            {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcrição salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa.'}
                           </p>
                           <button
                             onClick={() => handleAutoGenerate(currentMeetingId || meeting?.id)}
-                            className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 mx-auto border border-amber-300"
+                            className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 mx-auto"
                           >
                             <span>🧠</span> Gerar Entendimento com IA
                           </button>
@@ -286,25 +296,23 @@ export const MeetingDetailsPage = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg mt-4">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 1112 2.944a11.933 11.933 0 018.618 3.04m-5.228 5.228a9 9 0 1112.224-12.224m-5.228 5.228l5.228-5.228"></path></svg>
                 Reunião privada
               </div>
             </div>
             
             <div className="space-y-1">
               <button className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-colors" onClick={() => {
-                const id = consensus?.meeting_id || meeting?.id || currentMeetingId;
-                const base = getBaseUrl();
-                window.open(`${base}?route=/valida/${id}`, '_blank');
+                window.open(validationUrl, '_blank');
               }}>
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 15.938 10.777 17.94 13.394 17.94c1.694 0 3.179-.779 4.169-2m0 0a9.958 9.958 0 001.541-9.99m-2.182 10.727a9.009 9.009 0 01-4.546.893c-1.524 0-2.976-.356-4.243-1m0 0H2.708m0 0h.027"></path></svg>
                 Compartilhe esta reunião
               </button>
             </div>
             
             <div className="absolute bottom-6 right-6">
               <button className="w-12 h-12 bg-indigo-600 rounded-full shadow-lg flex items-center justify-center text-white hover:bg-indigo-700 transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </button>
             </div>
           </div>
