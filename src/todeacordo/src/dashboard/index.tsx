@@ -386,6 +386,7 @@ const DashboardApp = () => {
     const dashboardLink = isDemo ? `index.html?route=/meeting/demo` : `index.html?route=/meeting/${meeting.id}`;
     const statusText = meeting.consensusStatus || 'Pendente';
     const statusColor = statusText === 'Confirmado' ? 'bg-green-100 text-green-700 border-green-200' : statusText === 'Com ressalvas' ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+    const hasConsensus = !!meeting.consensus_object_id;
 
     return (
       <div key={meeting.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center justify-between transition-colors border-b border-slate-100 last:border-0 ${isDemo ? 'bg-amber-50/30' : 'hover:bg-slate-50'}`}>
@@ -411,14 +412,25 @@ const DashboardApp = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 ml-2">
+        <div className="flex items-center gap-2 shrink-0 ml-2 flex-wrap justify-end">
+          {/* Botão Gerar Entendimento para reuniões sem consensus */}
+          {!isDemo && !hasConsensus && (
+            <a
+              href={`index.html?route=/meeting/${meeting.id}&autoGenerate=true`}
+              className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-sm border border-amber-300"
+              title="Gerar entendimento com IA"
+            >
+              <span>🧠</span> Gerar entendimento
+            </a>
+          )}
+
           {statusText === 'Pendente' ? (
             <button onClick={() => {
               const link = `${window.location.origin}${validationLink}`;
               const msg = `Envie este link para confirmar o entendimento:\n👉 ${link}`;
               window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-            }} className="hidden md:flex bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-lg shadow-sm transition-colors items-center gap-2 text-sm mr-2">
-              <span>💬</span> Compartilhar para confirmar
+            }} className="hidden md:flex bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-lg shadow-sm transition-colors items-center gap-2 text-sm">
+              <span>💬</span> Compartilhar
             </button>
           ) : null}
           
@@ -527,24 +539,35 @@ const DashboardApp = () => {
             <div className="mb-6 bg-amber-50 border border-amber-300 rounded-2xl p-5">
               <div className="flex items-start gap-3 mb-3">
                 <span className="text-2xl">⚡</span>
-                <div>
+                <div className="flex-1">
                   <p className="font-bold text-amber-900 text-sm">Sessão interrompida detectada</p>
-                  <p className="text-amber-700 text-xs mt-1">Uma reunião foi capturada mas não finalizada (queda de energia, fechamento inesperado). Os segmentos de transcrição estão salvos. Você pode gerar o entendimento agora.</p>
+                  <p className="text-amber-700 text-xs mt-1">Uma reunião foi capturada mas o entendimento não foi gerado (queda de energia, fechamento inesperado). Os segmentos de transcrição estão salvos.</p>
                 </div>
               </div>
               <div className="flex flex-col gap-2">
                 {orphanMeetings.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between bg-white border border-amber-200 rounded-xl px-4 py-3">
+                  <div key={m.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-amber-200 rounded-xl px-4 py-3 gap-3">
                     <div>
                       <p className="text-sm font-bold text-slate-800">{m.title || 'Reunião sem título'}</p>
                       <p className="text-xs text-slate-500">{new Date(m.started_at).toLocaleString('pt-BR')} • {m.segmentCount} segmentos capturados</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {/* Link relativo (funciona na extensão) */}
                       <a
-                        href={`?route=/meeting/${m.id}&autoGenerate=true`}
-                        className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-lg text-xs transition-colors"
+                        href={`index.html?route=/meeting/${m.id}&autoGenerate=true`}
+                        className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center gap-1"
                       >
                         🧠 Gerar entendimento
+                      </a>
+                      {/* Link absoluto (funciona no site web) */}
+                      <a
+                        href={`https://todeacordo.com.br/app?route=/meeting/${m.id}&autoGenerate=true`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center gap-1"
+                        title="Abrir no site (se estiver acessando pela extensão)"
+                      >
+                        🌐 Abrir no site
                       </a>
                       <button
                         onClick={async () => {
