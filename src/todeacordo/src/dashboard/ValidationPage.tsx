@@ -131,7 +131,7 @@ const ValidationPage = () => {
         setLoading(false);
         setSigned(true);
         setShowSignatureModal(false);
-        alert("OK. Entendimento confirmado com sucesso.");
+        alert("Entendimento confirmado com sucesso.");
         if (consensus) {
           logEvent(consensus.id, 'handshake_signed', { signerName, signatureHash: 'simulated_hash' }).catch(console.error);
           trackGrowthEvent('accepted_with_signature', { consensus_id: consensus.id });
