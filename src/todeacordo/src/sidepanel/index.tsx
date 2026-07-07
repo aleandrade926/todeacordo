@@ -516,13 +516,13 @@ const SidePanel = () => {
 
         {meetingState === 'ACTIVE' && !captionsEnabled && (
           <div className="bg-red-100 border border-red-200 text-red-800 p-3 rounded-md text-sm text-center font-medium shadow-sm">
-            🚨 Ative as legendas do Google Meet (CC) para o ToDeAcordo capturar a conversa.
+            🚨 Ative as legendas do Google Meet (CC). Configure o idioma para <strong>Português (Brasil)</strong>.
           </div>
         )}
 
         {meetingState === 'ACTIVE' && captionsEnabled && (
-          <div className="bg-blue-50 border border-blue-100 text-blue-800 p-2.5 rounded-md text-[11px] leading-relaxed shadow-sm">
-            💡 <strong>Legendas do Meet ativas!</strong> Se a transcrição capturar palavras erradas, certifique-se de que o idioma da legenda no Meet está configurado para <strong>Português</strong>.
+          <div className="bg-blue-50 border border-blue-100 text-blue-800 p-2.5 rounded-md text-[12px] leading-relaxed shadow-sm">
+            💡 <strong>Legendas ativas!</strong> Se o texto capturado estiver estranho, clique em "Mais opções" (três pontos) no Meet &gt; Legendas, e mude o idioma de entrada para <strong>Português (Brasil)</strong>.
           </div>
         )}
       </div>

@@ -1,13 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { getConsensusForMeeting, saveConsensus } from '../storage/consensusStorage';
 import type { ConsensusObject, TranscriptSegment } from '../types';
 import { getTranscriptForMeeting } from '../storage/transcriptStorage';
 import { generateConsensusFromTranscript } from '../ai/consensusExtractor';
 import { getMeeting } from '../storage/meetingStorage';
-
 // Detect if running inside Chrome Extension or on web
 const isExtensionContext = () => window.location.protocol === 'chrome-extension:';
-const getBaseUrl = () => isExtensionContext() ? 'index.html' : '/app';
 const getValidationUrl = (meetingId: string) => {
   if (isExtensionContext()) {
     return `index.html?route=/valida/${meetingId}`;
@@ -102,15 +100,15 @@ export const MeetingDetailsPage = () => {
           await saveConsensus(finalResult);
           setConsensus(finalResult);
       } catch (e) {
-          console.error('Erro na geração automática', e);
+          console.error('Erro na geraÃ§Ã£o automÃ¡tica', e);
       } finally {
           setIsGenerating(false);
       }
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Carregando reunião...</div>;
-  if (isGenerating) return <div className="flex h-screen items-center justify-center font-bold text-indigo-600">Gerando consolidado da reunião (ToDeAcordo AI)...</div>;
-  if (!meeting && !consensus && transcript.length === 0) return <div className="p-8 text-center">Reunião não encontrada.</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center">Carregando reuniÃ£o...</div>;
+  if (isGenerating) return <div className="flex h-screen items-center justify-center font-bold text-indigo-600">Gerando consolidado da reuniÃ£o (ToDeAcordo AI)...</div>;
+  if (!meeting && !consensus && transcript.length === 0) return <div className="p-8 text-center">ReuniÃ£o nÃ£o encontrada.</div>;
 
   const validationUrl = getValidationUrl(consensus?.meeting_id || meeting?.id || currentMeetingId);
   const homeUrl = getHomeUrl();
@@ -127,7 +125,7 @@ export const MeetingDetailsPage = () => {
 
           <a href={homeUrl} className="flex items-center gap-3 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg font-medium text-sm transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2m0 0V7a2 2 0 00-2-2m0 0h-2.5a2 2 0 00-1 .333M9 5h0m0 0H7a2 2 0 00-2 2v6a2 2 0 002 2m0 0h2m0 0h2.5a2 2 0 001-.333M9 5a2 2 0 002-2m0 0V3"></path></svg>
-            Minhas Reuniões
+            Minhas ReuniÃµes
           </a>
         </nav>
         <div className="p-4 border-t border-slate-200">
@@ -140,15 +138,15 @@ export const MeetingDetailsPage = () => {
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 justify-between shrink-0">
           <div className="flex items-center gap-2 text-sm">
-            <a href={homeUrl} className="text-slate-500 hover:text-slate-900">Minhas Reuniões</a>
+            <a href={homeUrl} className="text-slate-500 hover:text-slate-900">Minhas ReuniÃµes</a>
             <span className="text-slate-300">/</span>
-            <span className="font-bold text-slate-900">{meeting?.title || consensus?.meeting_id || meeting?.id || 'Reunião Importante'}</span>
+            <span className="font-bold text-slate-900">{meeting?.title || consensus?.meeting_id || meeting?.id || 'ReuniÃ£o Importante'}</span>
           </div>
           <div className="flex items-center gap-3">
             <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors" onClick={() => {
               window.open(validationUrl, '_blank');
             }}>
-              Gerar Link de Validação
+              Gerar Link de ValidaÃ§Ã£o
             </button>
           </div>
         </header>
@@ -157,7 +155,7 @@ export const MeetingDetailsPage = () => {
         <div className="bg-white border-b border-slate-200 px-6 shrink-0">
           <div className="flex items-center gap-6">
             {[
-              { id: 'transcricao', label: 'Transcrição' },
+              { id: 'transcricao', label: 'TranscriÃ§Ã£o' },
               { id: 'acordos', label: 'Acordos & Entendimentos' }
             ].map(tab => (
               <button
@@ -181,22 +179,22 @@ export const MeetingDetailsPage = () => {
                   <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
                     <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Reunião muito curta para IA</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">ReuniÃ£o muito curta para IA</h2>
                   <p className="text-slate-500 mb-8 max-w-md">
-                    Os recursos de IA estão disponíveis para reuniões com mais de 2 minutos. Continue a reunião ou veja a transcrição enquanto isso.
+                    Os recursos de IA estÃ£o disponÃ­veis para reuniÃµes com mais de 2 minutos. Continue a reuniÃ£o ou veja a transcriÃ§Ã£o enquanto isso.
                   </p>
                   <button onClick={() => setActiveTab('transcricao')} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors">
-                    Ver transcrição →
+                    Ver transcriÃ§Ã£o â†’
                   </button>
                 </div>
               )}
 
               {activeTab === 'transcricao' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                  <h2 className="text-xl font-bold text-slate-900 mb-6">Transcrição Completa</h2>
+                  <h2 className="text-xl font-bold text-slate-900 mb-6">TranscriÃ§Ã£o Completa</h2>
                   {transcript.length > 0 ? (
                     <div className="space-y-6">
-                      {transcript.map((seg, i) => (
+                      {transcript.map((seg, i: number) => (
                         <div key={i} className="flex gap-4">
                           <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-slate-500">
                             {((seg.speaker && seg.speaker !== 'undefined' && seg.speaker !== 'Unknown') ? seg.speaker : 'Desconhecido').charAt(0).toUpperCase()}
@@ -216,7 +214,7 @@ export const MeetingDetailsPage = () => {
                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                           <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 13H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14-7h.01M7 7a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </div>
-                        <p>Transcrição ainda não disponível.</p>
+                        <p>TranscriÃ§Ã£o ainda nÃ£o disponÃ­vel.</p>
                       </div>
                   )}
                 </div>
@@ -227,123 +225,51 @@ export const MeetingDetailsPage = () => {
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-slate-900">Acordos Consolidados</h2>
                     <a href={validationUrl} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                      Compartilhar →
+                      Compartilhar â†’
                     </a>
                   </div>
                   {(() => {
-                    const hasContent =
-                      (consensus?.agreements?.length ?? 0) > 0 ||
-                      (consensus?.decisions?.length ?? 0) > 0 ||
-                      (consensus?.obligations?.length ?? 0) > 0 ||
-                      (consensus?.responsible_parties?.length ?? 0) > 0 ||
-                      (consensus?.deadlines?.length ?? 0) > 0 ||
-                      (consensus?.pending_items?.length ?? 0) > 0 ||
-                      Boolean(consensus?.summary);
-
+                    const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
                     if (!hasContent) {
                       return (
                         <div className="text-center py-12">
                           <p className="text-slate-500 mb-6">
-                            {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcrição salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa.'}
+                            {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcriÃ§Ã£o salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa.'}
                           </p>
                           <button
                             onClick={() => handleAutoGenerate(currentMeetingId || meeting?.id)}
                             className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 mx-auto"
                           >
-                            <span>🧠</span> Gerar Entendimento com IA
+                            <span>ðŸ§ </span> Gerar Entendimento com IA
                           </button>
                         </div>
                       );
                     }
                     return (
-                      <div className="space-y-8">
-                        {consensus?.summary && (
-                          <div>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Resumo</h3>
-                            <div className="bg-slate-50 p-4 rounded-xl text-slate-700">{consensus.summary}</div>
-                          </div>
-                        )}
-
-                        {consensus?.agreements?.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Acordos entre as partes</h3>
-                            <ul className="space-y-2">
-                              {consensus.agreements.map((a: any, i: number) => (
-                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
-                                  {typeof a === 'string' ? a : a.text}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {consensus?.decisions?.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
-                            <ul className="space-y-2">
-                              {consensus.decisions.map((d: any, i: number) => (
-                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                  <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {consensus?.obligations?.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Obrigações</h3>
-                            <ul className="space-y-2">
-                              {consensus.obligations.map((o: any, i: number) => (
-                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                  <span className="text-indigo-500">→</span>
-                                  <div>
-                                    <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {consensus?.responsible_parties?.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Responsáveis</h3>
-                            <ul className="space-y-2">
-                              {consensus.responsible_parties.map((r: any, i: number) => (
-                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
-                                  {typeof r === 'string' ? r : r.text}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {consensus?.deadlines?.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Prazos</h3>
-                            <ul className="space-y-2">
-                              {consensus.deadlines.map((d: any, i: number) => (
-                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
-                                  {typeof d === 'string' ? d : d.text}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {consensus?.pending_items?.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Pendências</h3>
-                            <ul className="space-y-2">
-                              {consensus.pending_items.map((p: any, i: number) => (
-                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
-                                  {typeof p === 'string' ? p : p.text}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">DecisÃµes</h3>
+                          <ul className="space-y-2">
+                            {consensus?.decisions?.map((d: any, i: number) => (
+                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                <span className="text-amber-500">âœ“</span> {typeof d === 'string' ? d : d.text}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">PrÃ³ximos Passos (ObrigaÃ§Ãµes)</h3>
+                          <ul className="space-y-2">
+                            {consensus?.obligations?.map((o: any, i: number) => (
+                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                <span className="text-indigo-500">â†’</span>
+                                <div>
+                                  <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     );
                   })()}
@@ -360,8 +286,8 @@ export const MeetingDetailsPage = () => {
                   {consensus?.participants?.[0]?.charAt(0).toUpperCase() || 'V'}
                 </div>
                 <div>
-                  <div className="font-bold text-slate-900 text-sm">Gravado por você</div>
-                  <div className="text-xs text-slate-500">{new Date(consensus?.created_at || Date.now()).toLocaleDateString('pt-BR')} • 1 min</div>
+                  <div className="font-bold text-slate-900 text-sm">Gravado por vocÃª</div>
+                  <div className="text-xs text-slate-500">{new Date(consensus?.created_at || Date.now()).toLocaleDateString('pt-BR')} â€¢ 1 min</div>
                 </div>
                 <div className="ml-auto bg-slate-100 p-1.5 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors">
                   <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -369,7 +295,7 @@ export const MeetingDetailsPage = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg mt-4">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 1112 2.944a11.933 11.933 0 018.618 3.04m-5.228 5.228a9 9 0 1112.224-12.224m-5.228 5.228l5.228-5.228"></path></svg>
-                Reunião privada
+                ReuniÃ£o privada
               </div>
             </div>
             
@@ -378,7 +304,7 @@ export const MeetingDetailsPage = () => {
                 window.open(validationUrl, '_blank');
               }}>
                 <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 15.938 10.777 17.94 13.394 17.94c1.694 0 3.179-.779 4.169-2m0 0a9.958 9.958 0 001.541-9.99m-2.182 10.727a9.009 9.009 0 01-4.546.893c-1.524 0-2.976-.356-4.243-1m0 0H2.708m0 0h.027"></path></svg>
-                Compartilhe esta reunião
+                Compartilhe esta reuniÃ£o
               </button>
             </div>
             
@@ -393,3 +319,5 @@ export const MeetingDetailsPage = () => {
     </div>
   );
 };
+
+
