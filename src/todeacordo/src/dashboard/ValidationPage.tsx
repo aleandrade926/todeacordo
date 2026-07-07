@@ -5,7 +5,7 @@ import { logEvent } from '../audit/auditLogger';
 import { trackGrowthEvent, getOrCreateReferralCode } from '../growth/growthLogger';
 import { generateConsensusHash } from '../lib/hashUtils';
 import { MOCK_CONSENSUS, MOCK_CONSENSUS_CONSULTORIA } from '../lib/mockData';
-import SignatureCanvas from 'react-signature-canvas';
+
 import { ToDeAcordoBadge } from '../components/ToDeAcordoBadge';
 import { useWebShare } from '../components/CopyEngines';
 
@@ -19,7 +19,9 @@ const ValidationPage = () => {
   // Handshake State
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signerName, setSignerName] = useState('');
-  const sigCanvas = useRef<SignatureCanvas>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawing = useRef(false);
+  const [canvasEmpty, setCanvasEmpty] = useState(true);
 
   // Identity Claim State (Viral Loop - Caiu na rede é peixe)
   const [claimEmail, setClaimEmail] = useState('');
@@ -79,18 +81,63 @@ const ValidationPage = () => {
     }
   };
 
+  // Vanilla canvas drawing handlers
+  const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    ctx.beginPath();
+    ctx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+    isDrawing.current = true;
+    canvas.setPointerCapture(e.pointerId);
+  };
+
+  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'black';
+    ctx.lineTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+    ctx.stroke();
+    setCanvasEmpty(false);
+  };
+
+  const stopDrawing = () => {
+    isDrawing.current = false;
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setCanvasEmpty(true);
+  };
+
   const handleSign = async () => {
     try {
       if (!signerName.trim()) {
         alert("Por favor, digite seu nome.");
         return;
       }
-      if (sigCanvas.current?.isEmpty()) {
+      if (canvasEmpty) {
         alert("Por favor, faça sua assinatura.");
         return;
       }
 
-      const signatureImage = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png');
+      const signatureImage = canvasRef.current?.toDataURL('image/png') || '';
       
       if (consensus) {
         const updatedConsensus = JSON.parse(JSON.stringify(consensus));
@@ -614,14 +661,19 @@ const ValidationPage = () => {
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Sua Rubrica</label>
                     <div className="border-2 border-dashed border-slate-300 rounded bg-slate-50 overflow-hidden group">
-                      <SignatureCanvas 
-                        ref={sigCanvas}
-                        penColor="black"
-                        canvasProps={{ className: 'w-full h-40 cursor-crosshair touch-none' }}
+                      <canvas
+                        ref={canvasRef}
+                        width={500}
+                        height={160}
+                        className="w-full h-40 cursor-crosshair touch-none"
+                        onPointerDown={startDrawing}
+                        onPointerMove={draw}
+                        onPointerUp={stopDrawing}
+                        onPointerLeave={stopDrawing}
                       />
                     </div>
                     <div className="flex justify-end mt-1">
-                      <button onClick={() => sigCanvas.current?.clear()} className="text-[10px] text-slate-400 hover:text-slate-600 underline">
+                      <button onClick={clearSignature} className="text-[10px] text-slate-400 hover:text-slate-600 underline">
                         Limpar quadro
                       </button>
                     </div>
