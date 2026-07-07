@@ -138,13 +138,16 @@ const ValidationPage = () => {
       }, 1000);
       
       // Efeito Confete Supremo!
-      import('canvas-confetti').then((confetti) => {
-        confetti.default({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#4f46e5', '#10b981', '#fbbf24']
-        });
+      import('canvas-confetti').then((confettiModule) => {
+        const fireConfetti = confettiModule.default || confettiModule;
+        if (typeof fireConfetti === 'function') {
+          fireConfetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#4f46e5', '#10b981', '#fbbf24']
+          });
+        }
       });
     } catch (e) {
       console.error('Erro ao registrar assinatura:', e);
