@@ -230,7 +230,15 @@ export const MeetingDetailsPage = () => {
                       </div>
                     </div>
                   ) : (
-                     <p className="text-slate-500 text-center py-8">Nenhum acordo gerado ainda.</p>
+                     <div className="text-center py-12">
+                       <p className="text-slate-500 mb-6">Nenhum entendimento ou acordo foi gerado para esta conversa ainda.</p>
+                       <button 
+                         onClick={() => handleAutoGenerate(meeting?.id)}
+                         className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 mx-auto border border-amber-300"
+                       >
+                         <span>🧠</span> Gerar Entendimento com IA
+                       </button>
+                     </div>
                   )}
                 </div>
               )}
