@@ -93,7 +93,7 @@ const ValidationPage = () => {
       const signatureImage = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png');
       
       if (consensus) {
-        const updatedConsensus = { ...consensus };
+        const updatedConsensus = JSON.parse(JSON.stringify(consensus));
         if (!updatedConsensus.signatures) updatedConsensus.signatures = [];
         updatedConsensus.signatures.push({
           name: signerName,
@@ -105,11 +105,11 @@ const ValidationPage = () => {
         updatedConsensus.status = 'consensus_obtained';
         
         // Se não for o mock, salvamos localmente
-        if (consensus.id !== 'demo') {
+        if (updatedConsensus.id !== 'demo') {
           await saveConsensus(updatedConsensus);
         }
         setConsensus(updatedConsensus);
-        logEvent(consensus.meeting_id, 'agreed_clicked');
+        logEvent(updatedConsensus.meeting_id, 'agreed_clicked');
       }
       
       // Simula salvamento com a assinatura
@@ -140,8 +140,9 @@ const ValidationPage = () => {
 
   const handleObjectionSubmit = async () => {
     if (consensus && consensus.id !== 'demo') {
-      const updatedConsensus = { ...consensus };
+      const updatedConsensus = JSON.parse(JSON.stringify(consensus));
       updatedConsensus.status = 'disputed';
+      if (!updatedConsensus.audit_events) updatedConsensus.audit_events = [];
       updatedConsensus.audit_events.push({
         id: crypto.randomUUID(),
         meeting_id: updatedConsensus.meeting_id,
@@ -151,7 +152,7 @@ const ValidationPage = () => {
       });
       await saveConsensus(updatedConsensus);
       setConsensus(updatedConsensus);
-      logEvent(consensus.meeting_id, 'objection_submitted');
+      logEvent(updatedConsensus.meeting_id, 'objection_submitted');
     }
     
     setLoading(true);
