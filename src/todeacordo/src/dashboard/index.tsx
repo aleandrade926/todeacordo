@@ -211,23 +211,37 @@ const DashboardApp = () => {
 
       const lines = pastedText.split('\n').filter(l => l.trim() !== '');
       const segments = lines.map((line, idx) => {
-        let speaker = 'Participante';
-        let text = line;
-        const match = line.match(/^\[?([^\]\:]+)\]?[\:\s](.*)$/);
+        const trimmed = line.trim();
+        // Recognize only `[Name]: text` or `Name: text` (brackets optional, colon required)
+        const match = trimmed.match(/^\[?([^\]\:]+)\]?\s*:\s*(.*)$/);
         if (match) {
-          speaker = match[1].trim();
-          text = match[2].trim();
+          const speaker = match[1].trim();
+          const text = match[2].trim();
+          return {
+            id: `seg-p-${idx}-${Date.now()}`,
+            speaker,
+            text,
+            captured_at: Date.now() - (lines.length - idx) * 1000,
+            meeting_id: meetingId,
+            timestamp: new Date(Date.now() - (lines.length - idx) * 1000).toISOString(),
+            source: 'pasted'
+          };
         }
+        // Line without ':' -> treat whole line as text by a generic participant
         return {
           id: `seg-p-${idx}-${Date.now()}`,
-          speaker,
-          text,
+          speaker: 'Participante',
+          text: trimmed,
           captured_at: Date.now() - (lines.length - idx) * 1000,
           meeting_id: meetingId,
           timestamp: new Date(Date.now() - (lines.length - idx) * 1000).toISOString(),
           source: 'pasted'
         };
       });
+
+      // Fill meeting participants with unique speakers found in the pasted text
+      const participants = Array.from(new Set(segments.map(s => s.speaker)));
+      meeting.participants = participants;
 
       await saveMeeting(meeting as any);
       for (const seg of segments) {

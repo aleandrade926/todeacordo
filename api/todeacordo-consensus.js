@@ -2,17 +2,17 @@
 // Substitui o express do backend/server.js
 
 const LLAMA_API_URL = process.env.LLAMA_API_URL || 'https://api.groq.com/openai/v1/chat/completions';
-const LLAMA_API_KEY = process.env.LLAMA_API_KEY || '';
+const LLAMA_API_KEY = process.env.LLAMA_API_KEY || process.env.GROQ_API_KEY || '';
 const LLAMA_MODEL = process.env.LLAMA_MODEL || 'llama-3.3-70b-versatile';
 
-const SYSTEM_PROMPT = `Você é um assistente de extração de dados estritamente baseado no transcript fornecido.
-Extraia da conversa as decisões, obrigações, prazos e pendências.
+const SYSTEM_PROMPT = `Você é um assistente de extração de acordos operacionais estritamente baseado no transcript fornecido.
+Extraia da conversa apenas os combinados firmes, decisões, obrigações, pendências, responsáveis, prazos e questões em aberto.
 
 REGRAS CRÍTICAS E OBRIGATÓRIAS DE GROUNDING (ANTI-ALUCINAÇÃO):
-1. USE EXCLUSIVAMENTE o texto fornecido em "Transcrição". 
+1. USE EXCLUSIVAMENTE o texto fornecido em "Transcrição".
 2. IGNORE qualquer conhecimento prévio sobre ToDeAcordo, MVP, Manifest V3, OpenAI, Edge Function, Groq, Supabase, backend ou similares. Se esses termos não aparecerem literalmente no transcript, eles não podem existir na resposta.
-3. NÃO INVENTE decisões, combinados, responsáveis, prazos ou obrigações que não foram explicitamente falados.
-4. Para cada item adicionado nas listas, você DEVE extrair um "evidence_quote" exato (literal) do trecho da transcrição que sustenta essa extração. Se não houver fala clara que sustente a extração, DESCARTAR o item.
+3. NÃO INVENTE decisões, combinados, responsáveis, prazos, pendências ou questões em aberto que não foram explicitamente falados.
+4. Se a evidência não puder ser encontrada de forma clara, prefira omitir o item em vez de inventar.
 5. Se o transcript estiver confuso, curto, fragmentado ou insuficiente para extrair acordos firmes, retorne as listas VAZIAS e um confidence_score baixo (0 a 30).
 6. Retorne APENAS JSON válido, sem markdown.
 
@@ -42,7 +42,13 @@ function validateItems(items, normalizedTranscript) {
     if (!item.text || !item.evidence_quote) return false;
     const normalizedQuote = normalizeString(item.evidence_quote);
     if (!normalizedQuote || normalizedQuote.length < 5) return false;
-    return normalizedTranscript.includes(normalizedQuote);
+    if (normalizedTranscript.includes(normalizedQuote)) return true;
+
+    const normalizedText = normalizeString(item.text);
+    const textWords = normalizedText.split(' ').filter(w => w.length > 3);
+    const matchingTextWords = textWords.filter(word => normalizedTranscript.includes(word));
+
+    return matchingTextWords.length >= Math.min(2, textWords.length);
   });
 }
 

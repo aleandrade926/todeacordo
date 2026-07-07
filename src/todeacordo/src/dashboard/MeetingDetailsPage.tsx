@@ -231,7 +231,15 @@ export const MeetingDetailsPage = () => {
                     </a>
                   </div>
                   {(() => {
-                    const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
+                    const hasContent =
+                      (consensus?.agreements?.length ?? 0) > 0 ||
+                      (consensus?.decisions?.length ?? 0) > 0 ||
+                      (consensus?.obligations?.length ?? 0) > 0 ||
+                      (consensus?.responsible_parties?.length ?? 0) > 0 ||
+                      (consensus?.deadlines?.length ?? 0) > 0 ||
+                      (consensus?.pending_items?.length ?? 0) > 0 ||
+                      Boolean(consensus?.summary);
+
                     if (!hasContent) {
                       return (
                         <div className="text-center py-12">
@@ -248,30 +256,94 @@ export const MeetingDetailsPage = () => {
                       );
                     }
                     return (
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
-                          <ul className="space-y-2">
-                            {consensus!.decisions?.map((d: any, i) => (
-                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Próximos Passos (Obrigações)</h3>
-                          <ul className="space-y-2">
-                            {consensus!.obligations?.map((o: any, i) => (
-                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                <span className="text-indigo-500">→</span>
-                                <div>
-                                  <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                      <div className="space-y-8">
+                        {consensus?.summary && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Resumo</h3>
+                            <div className="bg-slate-50 p-4 rounded-xl text-slate-700">{consensus.summary}</div>
+                          </div>
+                        )}
+
+                        {consensus?.agreements?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Acordos entre as partes</h3>
+                            <ul className="space-y-2">
+                              {consensus.agreements.map((a: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof a === 'string' ? a : a.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.decisions?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
+                            <ul className="space-y-2">
+                              {consensus.decisions.map((d: any, i: number) => (
+                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.obligations?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Obrigações</h3>
+                            <ul className="space-y-2">
+                              {consensus.obligations.map((o: any, i: number) => (
+                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  <span className="text-indigo-500">→</span>
+                                  <div>
+                                    <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.responsible_parties?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Responsáveis</h3>
+                            <ul className="space-y-2">
+                              {consensus.responsible_parties.map((r: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof r === 'string' ? r : r.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.deadlines?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Prazos</h3>
+                            <ul className="space-y-2">
+                              {consensus.deadlines.map((d: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof d === 'string' ? d : d.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.pending_items?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Pendências</h3>
+                            <ul className="space-y-2">
+                              {consensus.pending_items.map((p: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof p === 'string' ? p : p.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
