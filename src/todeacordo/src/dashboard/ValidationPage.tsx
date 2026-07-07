@@ -106,10 +106,24 @@ const ValidationPage = () => {
         
         // Se não for o mock, salvamos localmente
         if (updatedConsensus.id !== 'demo') {
-          await saveConsensus(updatedConsensus);
+          try {
+            await saveConsensus(updatedConsensus);
+          } catch (saveError) {
+            console.error('Erro no saveConsensus. Usando localStorage:', saveError);
+            try {
+              localStorage.setItem(`todeacordo_fallback_${updatedConsensus.id}`, JSON.stringify(updatedConsensus));
+            } catch (lsError) {
+              console.error('Falha no localStorage fallback:', lsError);
+            }
+          }
         }
         setConsensus(updatedConsensus);
-        logEvent(updatedConsensus.meeting_id, 'agreed_clicked');
+        
+        try {
+          await logEvent(updatedConsensus.meeting_id, 'agreed_clicked');
+        } catch (e) {
+          console.error(e);
+        }
       }
       
       // Simula salvamento com a assinatura
@@ -118,7 +132,7 @@ const ValidationPage = () => {
         setSigned(true);
         setShowSignatureModal(false);
         if (consensus) {
-          logEvent(consensus.id, 'handshake_signed', { signerName, signatureHash: 'simulated_hash' });
+          logEvent(consensus.id, 'handshake_signed', { signerName, signatureHash: 'simulated_hash' }).catch(console.error);
           trackGrowthEvent('accepted_with_signature', { consensus_id: consensus.id });
         }
       }, 1000);
@@ -134,7 +148,9 @@ const ValidationPage = () => {
       });
     } catch (e) {
       console.error('Erro ao registrar assinatura:', e);
-      alert('Erro ao registrar assinatura localmente no navegador. Por favor, certifique-se de que os cookies/armazenamento estão habilitados.');
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      alert(`Erro ao assinar: ${errorMsg}`);
+      setLoading(false);
     }
   };
 
@@ -150,9 +166,20 @@ const ValidationPage = () => {
         timestamp: Date.now(),
         details: { ip: '0.0.0.0', message: 'User raised item-by-item objections', objections: itemObjections }
       });
-      await saveConsensus(updatedConsensus);
+      try {
+        await saveConsensus(updatedConsensus);
+      } catch (saveError) {
+        console.error('Erro no saveConsensus da objeção. Usando localStorage:', saveError);
+        try {
+          localStorage.setItem(`todeacordo_fallback_${updatedConsensus.id}`, JSON.stringify(updatedConsensus));
+        } catch (lsError) {
+          console.error('Falha no localStorage fallback:', lsError);
+        }
+      }
       setConsensus(updatedConsensus);
-      logEvent(updatedConsensus.meeting_id, 'objection_submitted');
+      try {
+        await logEvent(updatedConsensus.meeting_id, 'objection_submitted');
+      } catch (e) { console.error(e); }
     }
     
     setLoading(true);
@@ -161,7 +188,7 @@ const ValidationPage = () => {
       setLoading(false);
       setObjection(true);
       setShowObjectionModal(false);
-      logEvent(consensus!.id, 'objection_submitted', { generalObjection, itemObjections });
+      logEvent(consensus!.id, 'objection_submitted', { generalObjection, itemObjections }).catch(console.error);
       trackGrowthEvent('accepted_with_reservation', { consensus_id: consensus!.id });
     }, 1000);
   };
