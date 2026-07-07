@@ -396,8 +396,9 @@ const DashboardApp = () => {
   };
 
   const renderMeetingRow = (meeting: any, isDemo: boolean = false) => {
-    const validationLink = isDemo ? `/index.html?route=/valida/demo` : `/index.html?route=/valida/${meeting.id}`;
-    const dashboardLink = isDemo ? `index.html?route=/meeting/demo` : `index.html?route=/meeting/${meeting.id}`;
+    const isExt = window.location.protocol === 'chrome-extension:';
+    const validationLink = isDemo ? (isExt ? 'index.html?route=/valida/demo' : '?route=/valida/demo') : (isExt ? `index.html?route=/valida/${meeting.id}` : `?route=/valida/${meeting.id}`);
+    const dashboardLink = isDemo ? (isExt ? 'index.html?route=/meeting/demo' : '?route=/meeting/demo') : (isExt ? `index.html?route=/meeting/${meeting.id}` : `?route=/meeting/${meeting.id}`);
     const statusText = meeting.consensusStatus || 'Pendente';
     const statusColor = statusText === 'Confirmado' ? 'bg-green-100 text-green-700 border-green-200' : statusText === 'Com ressalvas' ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200';
     const hasConsensus = !!meeting.consensus_object_id;
@@ -430,7 +431,7 @@ const DashboardApp = () => {
           {/* Botão Gerar Entendimento para reuniões sem consensus */}
           {!isDemo && !hasConsensus && (
             <a
-              href={`index.html?route=/meeting/${meeting.id}&autoGenerate=true`}
+              href={isExt ? `index.html?route=/meeting/${meeting.id}&autoGenerate=true` : `?route=/meeting/${meeting.id}&autoGenerate=true`}
               className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-sm border border-amber-300"
               title="Gerar entendimento com IA"
             >
