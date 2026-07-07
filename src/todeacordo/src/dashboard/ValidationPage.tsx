@@ -21,6 +21,7 @@ const ValidationPage = () => {
   const [signerName, setSignerName] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawing = useRef(false);
+  const isSigning = useRef(false);
   const [canvasEmpty, setCanvasEmpty] = useState(true);
 
   // Identity Claim State (Viral Loop - Caiu na rede é peixe)
@@ -127,6 +128,8 @@ const ValidationPage = () => {
   };
 
   const handleSign = async () => {
+    if (isSigning.current) return; // guard contra duplo clique
+    isSigning.current = true;
     try {
       if (!signerName.trim()) {
         alert("Por favor, digite seu nome.");
@@ -189,6 +192,8 @@ const ValidationPage = () => {
       const errorMsg = e instanceof Error ? e.message : String(e);
       alert(`Erro ao assinar: ${errorMsg}`);
       setLoading(false);
+    } finally {
+      isSigning.current = false;
     }
   };
 
@@ -689,7 +694,8 @@ const ValidationPage = () => {
                   </button>
                   <button 
                     onClick={handleSign}
-                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded shadow-sm flex items-center gap-2"
+                    disabled={isSigning.current}
+                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold rounded shadow-sm flex items-center gap-2"
                   >
                     <span>✒️</span> Confirmar e Aceitar
                   </button>
