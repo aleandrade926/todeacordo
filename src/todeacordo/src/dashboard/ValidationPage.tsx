@@ -131,24 +131,12 @@ const ValidationPage = () => {
         setLoading(false);
         setSigned(true);
         setShowSignatureModal(false);
+        alert("OK. Entendimento confirmado com sucesso.");
         if (consensus) {
           logEvent(consensus.id, 'handshake_signed', { signerName, signatureHash: 'simulated_hash' }).catch(console.error);
           trackGrowthEvent('accepted_with_signature', { consensus_id: consensus.id });
         }
       }, 1000);
-      
-      // Efeito Confete Supremo!
-      import('canvas-confetti').then((confettiModule) => {
-        const fireConfetti = confettiModule.default || confettiModule;
-        if (typeof fireConfetti === 'function') {
-          fireConfetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#4f46e5', '#10b981', '#fbbf24']
-          });
-        }
-      });
     } catch (e) {
       console.error('Erro ao registrar assinatura:', e);
       const errorMsg = e instanceof Error ? e.message : String(e);
