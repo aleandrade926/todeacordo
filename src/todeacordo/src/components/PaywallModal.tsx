@@ -77,33 +77,66 @@ export const PaywallModal = ({ isOpen, onClose, attemptedFeature, sourceMeetingI
         {/* Body Formulário / PIX */}
         <div className="p-6 overflow-y-auto space-y-6">
           
-          {/* Sessão PIX Sonia */}
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-150 rounded-2xl p-4 shadow-sm text-center">
-            <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest block mb-1">💸 APOIE O DESENVOLVIMENTO (ILIMITADO POR 30 DIAS)</span>
-            <p className="text-slate-700 text-xs mb-3 leading-relaxed">
-              Pague qualquer valor ou a assinatura de <strong>R$ 29,90</strong> para liberar 30 dias de uso ilimitado e ajudar a manter a ferramenta independente.
+          {/* Comparativo de Planos */}
+          <div className="space-y-4">
+            {/* Card Plano Gratuito */}
+            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-bold text-slate-800 text-sm">Plano Gratuito</span>
+                <span className="text-xs bg-slate-200 text-slate-650 px-2 py-0.5 rounded font-bold">Grátis</span>
+              </div>
+              <ul className="text-left text-xs text-slate-600 space-y-1.5">
+                <li className="flex items-center gap-1.5">✓ 3 entendimentos/acordos validados</li>
+                <li className="flex items-center gap-1.5">✓ 20 transcrições/resumos grátis</li>
+                <li className="flex items-center gap-1.5">✓ Link de validação incluído nos 3 entendimentos</li>
+              </ul>
+            </div>
+
+            {/* Card Plano Fundador */}
+            <div className="border border-indigo-200 rounded-xl p-4 bg-indigo-50/50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-wider py-1 px-3 rounded-bl-xl">
+                Recomendado
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-bold text-indigo-900 text-sm">Plano Fundador</span>
+                <span className="text-xs font-black text-indigo-700">R$ 29/mês ou R$ 97/3 meses</span>
+              </div>
+              <ul className="text-left text-xs text-slate-600 space-y-1.5 mb-3">
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Mais transcrições</li>
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Mais entendimentos validados</li>
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Prioridade de acesso no Beta</li>
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Apoio direto ao desenvolvimento independente</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Sessão PIX Fundador */}
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 shadow-sm text-center">
+            <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest block mb-1">💸 SEJA UM FUNDADOR (APOIO DIRETO)</span>
+            <p className="text-slate-705 text-xs mb-3 leading-relaxed">
+              O pagamento é feito diretamente para o Pix pessoal da equipe para financiar a hospedagem e evolução do produto sem investidores externos.
             </p>
             
             <div className="bg-white border border-slate-200 rounded-xl py-3 px-4 mb-3">
-              <div className="text-xs text-slate-400 font-medium mb-1">Chave Pix (Telefone)</div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Chave Pix (Telefone)</div>
               <div className="text-base font-black text-indigo-900 select-all font-mono">11 993725876</div>
-              <div className="text-[10px] text-slate-400 mt-1">Nome do Favorecido: Sonia</div>
+              <div className="text-[10px] text-slate-450 mt-1 font-semibold">Nome do Favorecido: Sonia (Equipe de Desenvolvimento)</div>
             </div>
             
             <p className="text-[10px] text-indigo-600 font-medium">
-              💡 Dica: Envie o comprovante no WhatsApp do Alexandre ou Sonia para liberação!
+              💡 Dica: Envie o comprovante no WhatsApp do Alexandre ou Sonia para liberação imediata!
             </p>
           </div>
 
           {submitted ? (
-            <div className="text-center py-4">
+            <div className="text-center py-4 animate-fadeIn">
               <div className="text-4xl mb-3">🎉</div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">Você está na lista de fundadores!</h3>
-              <p className="text-xs text-slate-500">Registramos seu interesse e sua vaga por R$ 29,90/mês vitalício.</p>
+              <p className="text-xs text-slate-500">Registramos seu interesse no plano promocional de fundador.</p>
             </div>
           ) : (
             <div className="border-t border-slate-100 pt-4">
-              <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3 text-center">Garantir Preço Promocional de Lançamento (Opcional)</h4>
+              <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3 text-center">Garantir Preço de Lançamento (R$ 29/mês)</h4>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
                   <label className="block text-[11px] font-medium text-slate-650 mb-0.5">Qual recurso você mais precisa?</label>
@@ -135,7 +168,7 @@ export const PaywallModal = ({ isOpen, onClose, attemptedFeature, sourceMeetingI
                   disabled={loading}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg shadow-md mt-2 transition-transform active:scale-95 disabled:bg-slate-400 text-xs"
                 >
-                  {loading ? 'Reservando...' : 'Quero Entrar na Lista (Garantir R$ 29,90/mês)'}
+                  {loading ? 'Reservando...' : 'Garantir Vaga no Plano Fundador'}
                 </button>
               </form>
             </div>
