@@ -4,7 +4,7 @@ import '../index.css';
 import PrivacyPolicy from './Privacy';
 import { getAllMeetings, clearMeeting, saveMeeting } from '../storage/meetingStorage';
 import { clearConsensusForMeeting } from '../storage/consensusStorage';
-import { saveTranscriptSegment } from '../storage/transcriptStorage';
+import { saveTranscriptSegment, getTranscriptForMeeting } from '../storage/transcriptStorage';
 import ValidationPage from './ValidationPage';
 import { MeetingDetailsPage } from './MeetingDetailsPage';
 import LandingPage from './LandingPage';
@@ -71,6 +71,7 @@ const DashboardApp = () => {
   const [creationModalOpen, setCreationModalOpen] = useState(false);
   const [successModalData, setSuccessModalData] = useState<{link: string} | null>(null);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [orphanMeetings, setOrphanMeetings] = useState<any[]>([]);
   const { canCreateUnderstanding, recordUsage } = useUsage();
 
   const showToast = (message: string, type: 'success'|'error' = 'success') => {
@@ -85,6 +86,18 @@ const DashboardApp = () => {
       const allMeetings = await getAllMeetings();
       const validMeetings = allMeetings.filter((m: any) => m.status !== 'cleared').sort((a: any, b: any) => b.started_at - a.started_at);
       setMeetings(validMeetings);
+
+      // Detects orphan sessions (active but without consensus — e.g. battery died)
+      const orphans = [];
+      for (const m of allMeetings) {
+        if ((m.status === 'active' || m.is_active) && !m.consensus_object_id) {
+          const segs = await getTranscriptForMeeting(m.id);
+          if (segs.length > 0) {
+            orphans.push({ ...m, segmentCount: segs.length });
+          }
+        }
+      }
+      setOrphanMeetings(orphans);
 
       // Auto-Generate Check
       const urlParams = new URLSearchParams(window.location.search);
@@ -508,6 +521,47 @@ const DashboardApp = () => {
               + Criar entendimento
             </button>
           </div>
+
+          {/* Recovery Banner for orphan/interrupted sessions */}
+          {orphanMeetings.length > 0 && (
+            <div className="mb-6 bg-amber-50 border border-amber-300 rounded-2xl p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <span className="text-2xl">⚡</span>
+                <div>
+                  <p className="font-bold text-amber-900 text-sm">Sessão interrompida detectada</p>
+                  <p className="text-amber-700 text-xs mt-1">Uma reunião foi capturada mas não finalizada (queda de energia, fechamento inesperado). Os segmentos de transcrição estão salvos. Você pode gerar o entendimento agora.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                {orphanMeetings.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between bg-white border border-amber-200 rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">{m.title || 'Reunião sem título'}</p>
+                      <p className="text-xs text-slate-500">{new Date(m.started_at).toLocaleString('pt-BR')} • {m.segmentCount} segmentos capturados</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <a
+                        href={`?route=/meeting/${m.id}&autoGenerate=true`}
+                        className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-lg text-xs transition-colors"
+                      >
+                        🧠 Gerar entendimento
+                      </a>
+                      <button
+                        onClick={async () => {
+                          await clearMeeting(m.id);
+                          setOrphanMeetings(prev => prev.filter(x => x.id !== m.id));
+                        }}
+                        className="text-slate-400 hover:text-red-500 px-2 py-2 rounded-lg text-xs transition-colors"
+                        title="Descartar sessão"
+                      >
+                        🗑 Descartar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Social / Network Effect Indicator */}
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-8 flex items-center gap-3">
