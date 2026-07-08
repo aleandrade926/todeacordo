@@ -257,6 +257,7 @@ const DashboardApp = () => {
   };
 
   const handleCreateAction = async () => {
+    setCreationModalOpen(true);
     setIsPasting(true);
   };
 
