@@ -4,15 +4,17 @@ import type { ConsensusObject, TranscriptSegment } from '../types';
 import { getTranscriptForMeeting } from '../storage/transcriptStorage';
 import { generateConsensusFromTranscript } from '../ai/consensusExtractor';
 import { getMeeting } from '../storage/meetingStorage';
+
 // Detect if running inside Chrome Extension or on web
 const isExtensionContext = () => window.location.protocol === 'chrome-extension:';
+const getBaseUrl = () => isExtensionContext() ? 'index.html' : '/app';
 const getValidationUrl = (meetingId: string) => {
   if (isExtensionContext()) {
     return `index.html?route=/valida/${meetingId}`;
   }
-  return `?route=/valida/${meetingId}`;
+  return `/app?route=/valida/${meetingId}`;
 };
-const getHomeUrl = () => isExtensionContext() ? 'index.html' : '?route=/';
+const getHomeUrl = () => isExtensionContext() ? 'index.html' : '/app';
 
 export const MeetingDetailsPage = () => {
   const [consensus, setConsensus] = useState<ConsensusObject | null>(null);
@@ -69,6 +71,7 @@ export const MeetingDetailsPage = () => {
         (cData?.agreements?.length ?? 0) > 0 ||
         (cData?.decisions?.length ?? 0) > 0 || 
         (cData?.obligations?.length ?? 0) > 0 ||
+        (cData?.responsible_parties?.length ?? 0) > 0 ||
         (cData?.deadlines?.length ?? 0) > 0 ||
         (cData?.pending_items?.length ?? 0) > 0 ||
         Boolean(cData?.summary);
@@ -112,9 +115,9 @@ export const MeetingDetailsPage = () => {
       }
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Carregando reuniÃ£o...</div>;
-  if (isGenerating) return <div className="flex h-screen items-center justify-center font-bold text-indigo-600">Gerando consolidado da reuniÃ£o (ToDeAcordo AI)...</div>;
-  if (!meeting && !consensus && transcript.length === 0) return <div className="p-8 text-center">Reunião nÃ£o encontrada.</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center">Carregando reunião...</div>;
+  if (isGenerating) return <div className="flex h-screen items-center justify-center font-bold text-indigo-600">Gerando consolidado da reunião (ToDeAcordo AI)...</div>;
+  if (!meeting && !consensus && transcript.length === 0) return <div className="p-8 text-center">Reunião não encontrada.</div>;
 
   const validationUrl = getValidationUrl(consensus?.meeting_id || meeting?.id || currentMeetingId);
   const homeUrl = getHomeUrl();
@@ -131,7 +134,7 @@ export const MeetingDetailsPage = () => {
 
           <a href={homeUrl} className="flex items-center gap-3 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg font-medium text-sm transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2m0 0V7a2 2 0 00-2-2m0 0h-2.5a2 2 0 00-1 .333M9 5h0m0 0H7a2 2 0 00-2 2v6a2 2 0 002 2m0 0h2m0 0h2.5a2 2 0 001-.333M9 5a2 2 0 002-2m0 0V3"></path></svg>
-            Minhas ReuniÃµes
+            Minhas Reuniões
           </a>
         </nav>
         <div className="p-4 border-t border-slate-200">
@@ -144,7 +147,7 @@ export const MeetingDetailsPage = () => {
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 justify-between shrink-0">
           <div className="flex items-center gap-2 text-sm">
-            <a href={homeUrl} className="text-slate-500 hover:text-slate-900">Minhas ReuniÃµes</a>
+            <a href={homeUrl} className="text-slate-500 hover:text-slate-900">Minhas Reuniões</a>
             <span className="text-slate-300">/</span>
             <span className="font-bold text-slate-900">{meeting?.title || consensus?.meeting_id || meeting?.id || 'Reunião Importante'}</span>
           </div>
@@ -187,10 +190,10 @@ export const MeetingDetailsPage = () => {
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">Reunião muito curta para IA</h2>
                   <p className="text-slate-500 mb-8 max-w-md">
-                    Os recursos de IA estÃ£o disponÃ­veis para reuniÃµes com mais de 2 minutos. Continue a reuniÃ£o ou veja a transcriÃ§Ã£o enquanto isso.
+                    Os recursos de IA estão disponíveis para reuniões com mais de 2 minutos. Continue a reunião ou veja a transcrição enquanto isso.
                   </p>
                   <button onClick={() => setActiveTab('transcricao')} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors">
-                    Ver transcriÃ§Ã£o →
+                    Ver transcrição →
                   </button>
                 </div>
               )}
@@ -200,7 +203,7 @@ export const MeetingDetailsPage = () => {
                   <h2 className="text-xl font-bold text-slate-900 mb-6">Transcrição Completa</h2>
                   {transcript.length > 0 ? (
                     <div className="space-y-6">
-                      {transcript.map((seg, i: number) => (
+                      {transcript.map((seg, i) => (
                         <div key={i} className="flex gap-4">
                           <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-slate-500">
                             {((seg.speaker && seg.speaker !== 'undefined' && seg.speaker !== 'Unknown') ? seg.speaker : 'Desconhecido').charAt(0).toUpperCase()}
@@ -220,7 +223,7 @@ export const MeetingDetailsPage = () => {
                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                           <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 13H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14-7h.01M7 7a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </div>
-                        <p>Transcrição ainda nÃ£o disponÃ­vel.</p>
+                        <p>Transcrição ainda não disponível.</p>
                       </div>
                   )}
                 </div>
@@ -235,53 +238,119 @@ export const MeetingDetailsPage = () => {
                     </a>
                   </div>
                   {(() => {
-                    const hasContent = 
+                    const hasContent =
                       (consensus?.agreements?.length ?? 0) > 0 ||
-                      (consensus?.decisions?.length ?? 0) > 0 || 
+                      (consensus?.decisions?.length ?? 0) > 0 ||
                       (consensus?.obligations?.length ?? 0) > 0 ||
+                      (consensus?.responsible_parties?.length ?? 0) > 0 ||
                       (consensus?.deadlines?.length ?? 0) > 0 ||
                       (consensus?.pending_items?.length ?? 0) > 0 ||
                       Boolean(consensus?.summary);
+
                     if (!hasContent) {
                       return (
                         <div className="text-center py-12">
                           <p className="text-slate-500 mb-6">
-                            {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcriÃ§Ã£o salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa.'}
+                            {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcrição salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa.'}
                           </p>
                           <button
                             onClick={() => handleAutoGenerate(currentMeetingId || meeting?.id)}
                             className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 mx-auto"
                           >
-                            <span>ðŸ§ </span> Gerar Entendimento com IA
+                            <span>🧠</span> Gerar Entendimento com IA
                           </button>
                         </div>
                       );
                     }
                     return (
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
-                          <ul className="space-y-2">
-                            {consensus?.decisions?.map((d: any, i: number) => (
-                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Próximos Passos (Obrigações)</h3>
-                          <ul className="space-y-2">
-                            {consensus?.obligations?.map((o: any, i: number) => (
-                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                <span className="text-indigo-500">→</span>
-                                <div>
-                                  <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                      <div className="space-y-8">
+                        {consensus?.summary && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Resumo</h3>
+                            <div className="bg-slate-50 p-4 rounded-xl text-slate-700">{consensus.summary}</div>
+                          </div>
+                        )}
+
+                        {consensus?.agreements?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Acordos entre as partes</h3>
+                            <ul className="space-y-2">
+                              {consensus.agreements.map((a: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof a === 'string' ? a : a.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.decisions?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
+                            <ul className="space-y-2">
+                              {consensus.decisions.map((d: any, i: number) => (
+                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.obligations?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Obrigações</h3>
+                            <ul className="space-y-2">
+                              {consensus.obligations.map((o: any, i: number) => (
+                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  <span className="text-indigo-500">→</span>
+                                  <div>
+                                    <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.responsible_parties?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Responsáveis</h3>
+                            <ul className="space-y-2">
+                              {consensus.responsible_parties.map((r: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof r === 'string' ? r : r.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.deadlines?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Prazos</h3>
+                            <ul className="space-y-2">
+                              {consensus.deadlines.map((d: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof d === 'string' ? d : d.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {consensus?.pending_items?.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Pendências</h3>
+                            <ul className="space-y-2">
+                              {consensus.pending_items.map((p: any, i: number) => (
+                                <li key={i} className="bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  {typeof p === 'string' ? p : p.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -316,7 +385,7 @@ export const MeetingDetailsPage = () => {
                 window.open(validationUrl, '_blank');
               }}>
                 <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 15.938 10.777 17.94 13.394 17.94c1.694 0 3.179-.779 4.169-2m0 0a9.958 9.958 0 001.541-9.99m-2.182 10.727a9.009 9.009 0 01-4.546.893c-1.524 0-2.976-.356-4.243-1m0 0H2.708m0 0h.027"></path></svg>
-                Compartilhe esta reuniÃ£o
+                Compartilhe esta reunião
               </button>
             </div>
             
@@ -331,5 +400,3 @@ export const MeetingDetailsPage = () => {
     </div>
   );
 };
-
-
