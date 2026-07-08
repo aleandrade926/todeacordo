@@ -7,7 +7,6 @@ import { getMeeting } from '../storage/meetingStorage';
 
 // Detect if running inside Chrome Extension or on web
 const isExtensionContext = () => window.location.protocol === 'chrome-extension:';
-const getBaseUrl = () => isExtensionContext() ? 'index.html' : '/app';
 const getValidationUrl = (meetingId: string) => {
   if (isExtensionContext()) {
     return `index.html?route=/valida/${meetingId}`;
