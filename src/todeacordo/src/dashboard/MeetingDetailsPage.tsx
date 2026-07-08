@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getConsensusForMeeting, saveConsensus } from '../storage/consensusStorage';
 import type { ConsensusObject, TranscriptSegment } from '../types';
 import { getTranscriptForMeeting } from '../storage/transcriptStorage';
@@ -65,7 +65,13 @@ export const MeetingDetailsPage = () => {
       }
 
       // Consider consensus "real" only if it has actual decisions or obligations
-      const hasContent = (cData?.decisions?.length ?? 0) > 0 || (cData?.obligations?.length ?? 0) > 0;
+      const hasContent = 
+        (cData?.agreements?.length ?? 0) > 0 ||
+        (cData?.decisions?.length ?? 0) > 0 || 
+        (cData?.obligations?.length ?? 0) > 0 ||
+        (cData?.deadlines?.length ?? 0) > 0 ||
+        (cData?.pending_items?.length ?? 0) > 0 ||
+        Boolean(cData?.summary);
       return hasContent;
     } catch (e) {
       console.error(e);
@@ -229,7 +235,13 @@ export const MeetingDetailsPage = () => {
                     </a>
                   </div>
                   {(() => {
-                    const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
+                    const hasContent = 
+                      (consensus?.agreements?.length ?? 0) > 0 ||
+                      (consensus?.decisions?.length ?? 0) > 0 || 
+                      (consensus?.obligations?.length ?? 0) > 0 ||
+                      (consensus?.deadlines?.length ?? 0) > 0 ||
+                      (consensus?.pending_items?.length ?? 0) > 0 ||
+                      Boolean(consensus?.summary);
                     if (!hasContent) {
                       return (
                         <div className="text-center py-12">
