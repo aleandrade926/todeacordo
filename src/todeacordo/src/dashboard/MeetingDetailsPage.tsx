@@ -92,6 +92,7 @@ export const MeetingDetailsPage = () => {
           if (!tData || tData.length === 0) {
               throw new Error('Nenhuma transcrição foi encontrada para esta reunião.');
           }
+          console.log('BUG 007 — ETAPA 1: transcrição carregada', tData);
           
           const result = await generateConsensusFromTranscript({
               meetingId: id,
@@ -99,14 +100,20 @@ export const MeetingDetailsPage = () => {
               participants: [],
               segments: tData
           });
+          console.log('BUG 007 — ETAPA 2: API respondeu', result);
 
           const finalResult = { ...result, meeting_id: id, id: result.id || id } as ConsensusObject;
+          console.log('BUG 007 — ETAPA 3: objeto final criado', finalResult);
 
           await saveConsensus(finalResult);
+          console.log('BUG 007 — ETAPA 4: consenso salvo');
+
           setConsensus(finalResult);
+          console.log('BUG 007 — ETAPA 5: estado atualizado');
       } catch (e: unknown) {
-          console.error('Erro na geração automática', e);
-          setGenerationError(e instanceof Error ? e.message : 'Falha inesperada ao gerar o entendimento.');
+          const message = e instanceof Error ? `${e.name}: ${e.message}` : JSON.stringify(e);
+          console.error('BUG 007 — etapa da falha:', message, e);
+          setGenerationError(message);
       } finally {
           setIsGenerating(false);
       }

@@ -31,5 +31,36 @@ export async function generateConsensusViaLlama(params: GenerationParams): Promi
   }
 
   const consensus = await response.json();
+  
+  // Adaptador temporário para garantir que a interface não quebre caso a API retorne o formato simples
+  if (consensus && typeof consensus.consensus === 'string') {
+    return {
+      id: "temp-" + Date.now().toString(),
+      meeting_id: params.meetingId,
+      source_platform: params.sourcePlatform || 'google-meet',
+      title: 'Resumo da Reunião',
+      created_at: Date.now(),
+      updated_at: Date.now(),
+      participants: params.participants || [],
+      transcript_segments: params.transcriptSegments || [],
+      consensus_versions: [{ version: 1, created_at: Date.now(), content: consensus }],
+      current_version: 1,
+      status: 'pending_review',
+      summary: consensus.consensus,
+      agreements: [],
+      decisions: [{ text: "Entendimento consolidado em formato simples", evidence_quote: consensus.consensus.substring(0, 50) + "..." }],
+      obligations: [],
+      pending_items: [],
+      responsible_parties: [],
+      deadlines: [],
+      open_questions: [],
+      disputed_points: [],
+      confidence_score: 50,
+      provider: 'groq',
+      model: consensus.model || 'llama-3.1-70b-versatile',
+      audit_events: []
+    } as ConsensusObject;
+  }
+
   return consensus as ConsensusObject;
 }
