@@ -8,8 +8,9 @@ interface GenerationParams {
 }
 
 export async function generateConsensusViaLlama(params: GenerationParams): Promise<ConsensusObject> {
-  const API_BASE_URL = import.meta.env.VITE_TODEACORDO_API_BASE_URL || '';
-  const BACKEND_URL = `${API_BASE_URL}/api/todeacordo-consensus`;
+  const API_BASE_URL = import.meta.env.VITE_TODEACORDO_CONSENSUS_API_BASE_URL
+    || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://app.todeacordo.com.br');
+  const BACKEND_URL = `${API_BASE_URL}/api/generate-consensus`;
   
   const response = await fetch(BACKEND_URL, {
     method: 'POST',
@@ -26,7 +27,7 @@ export async function generateConsensusViaLlama(params: GenerationParams): Promi
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Falha ao gerar consenso com Llama via backend na nuvem.');
+    throw new Error(errorData.error || `Falha ao gerar entendimento (HTTP ${response.status}).`);
   }
 
   const consensus = await response.json();

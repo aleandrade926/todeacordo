@@ -22,6 +22,7 @@ export const MeetingDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'transcricao' | 'chat' | 'acordos' | 'notas'>('transcricao');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [currentMeetingId, setCurrentMeetingId] = useState<string>('');
   const autoGenerateRef = useRef(false);
 
@@ -78,15 +79,18 @@ export const MeetingDetailsPage = () => {
 
   const handleAutoGenerate = async (mId: string) => {
       const id = mId || currentMeetingId;
-      if (!id) { console.error('Meeting ID missing for generation'); return; }
+      if (!id) {
+          setGenerationError('Não foi possível identificar a reunião para gerar o entendimento.');
+          setActiveTab('acordos');
+          return;
+      }
+      setGenerationError(null);
       setIsGenerating(true);
       setActiveTab('acordos');
       try {
           const tData = await getTranscriptForMeeting(id);
           if (!tData || tData.length === 0) {
-              console.log('Nenhum transcrito encontrado para gerar consenso.');
-              setIsGenerating(false);
-              return;
+              throw new Error('Nenhuma transcrição foi encontrada para esta reunião.');
           }
           
           const result = await generateConsensusFromTranscript({
@@ -100,8 +104,9 @@ export const MeetingDetailsPage = () => {
 
           await saveConsensus(finalResult);
           setConsensus(finalResult);
-      } catch (e) {
+      } catch (e: unknown) {
           console.error('Erro na geração automática', e);
+          setGenerationError(e instanceof Error ? e.message : 'Falha inesperada ao gerar o entendimento.');
       } finally {
           setIsGenerating(false);
       }
@@ -234,6 +239,12 @@ export const MeetingDetailsPage = () => {
                     if (!hasContent) {
                       return (
                         <div className="text-center py-12">
+                          {generationError && (
+                            <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">
+                              <p className="font-bold">Não foi possível gerar o entendimento.</p>
+                              <p className="mt-1">{generationError}</p>
+                            </div>
+                          )}
                           <p className="text-slate-500 mb-6">
                             {consensus ? 'A IA gerou um registro vazio. Clique abaixo para tentar novamente com a transcrição salva.' : 'Nenhum entendimento ou acordo foi gerado para esta conversa.'}
                           </p>
