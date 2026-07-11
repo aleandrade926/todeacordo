@@ -7,11 +7,11 @@ import { getMeeting } from '../storage/meetingStorage';
 
 // Detect if running inside Chrome Extension or on web
 const isExtensionContext = () => window.location.protocol === 'chrome-extension:';
-const getValidationUrl = (meetingId: string) => {
+const getValidationUrl = (consensusId: string) => {
   if (isExtensionContext()) {
-    return `index.html?route=/valida/${meetingId}`;
+    return `index.html?route=/valida/${consensusId}`;
   }
-  return `/app?route=/valida/${meetingId}`;
+  return `/app?route=/valida/${consensusId}`;
 };
 const getHomeUrl = () => isExtensionContext() ? 'index.html' : '/app';
 
@@ -92,7 +92,7 @@ export const MeetingDetailsPage = () => {
           if (!tData || tData.length === 0) {
               throw new Error('Nenhuma transcrição foi encontrada para esta reunião.');
           }
-          console.log('BUG 007 — ETAPA 1: transcrição carregada', tData);
+          console.log('BUG007 ETAPA 1', { id, transcriptLength: tData?.length });
           
           const result = await generateConsensusFromTranscript({
               meetingId: id,
@@ -100,16 +100,23 @@ export const MeetingDetailsPage = () => {
               participants: [],
               segments: tData
           });
-          console.log('BUG 007 — ETAPA 2: API respondeu', result);
+          console.log('BUG007 ETAPA 2 API', result);
 
-          const finalResult = { ...result, meeting_id: id, id: result.id || id } as ConsensusObject;
-          console.log('BUG 007 — ETAPA 3: objeto final criado', finalResult);
+          const now = Date.now();
+          const finalResult = {
+            ...result,
+            id: result.id || crypto.randomUUID(),
+            meeting_id: id,
+            created_at: result.created_at || (result as any).generated_at || now,
+            updated_at: result.updated_at || now,
+          } as ConsensusObject;
+          console.log('BUG007 ETAPA 3 NORMALIZADO', finalResult);
 
           await saveConsensus(finalResult);
-          console.log('BUG 007 — ETAPA 4: consenso salvo');
+          console.log('BUG007 ETAPA 4 SALVO');
 
           setConsensus(finalResult);
-          console.log('BUG 007 — ETAPA 5: estado atualizado');
+          console.log('BUG007 ETAPA 5 ESTADO ATUALIZADO');
       } catch (e: unknown) {
           const message = e instanceof Error ? `${e.name}: ${e.message}` : JSON.stringify(e);
           console.error('BUG 007 — etapa da falha:', message, e);
@@ -123,7 +130,7 @@ export const MeetingDetailsPage = () => {
   if (isGenerating) return <div className="flex h-screen items-center justify-center font-bold text-indigo-600">Gerando consolidado da reunião (ToDeAcordo AI)...</div>;
   if (!meeting && !consensus && transcript.length === 0) return <div className="p-8 text-center">Reunião não encontrada.</div>;
 
-  const validationUrl = getValidationUrl(consensus?.meeting_id || meeting?.id || currentMeetingId);
+  const validationUrl = consensus?.id ? getValidationUrl(consensus.id) : '';
   const homeUrl = getHomeUrl();
 
   return (
@@ -156,9 +163,13 @@ export const MeetingDetailsPage = () => {
             <span className="font-bold text-slate-900">{meeting?.title || consensus?.meeting_id || meeting?.id || 'Reunião Importante'}</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors" onClick={() => {
-              window.open(validationUrl, '_blank');
-            }}>
+            <button 
+              className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors ${!validationUrl ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
+              disabled={!validationUrl}
+              onClick={() => {
+                if (validationUrl) window.open(validationUrl, '_blank');
+              }}
+            >
               Gerar Link de Validação
             </button>
           </div>
@@ -237,9 +248,15 @@ export const MeetingDetailsPage = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-slate-900">Acordos Consolidados</h2>
-                    <a href={validationUrl} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                      Compartilhar →
-                    </a>
+                    {validationUrl ? (
+                      <a href={validationUrl} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                        Compartilhar →
+                      </a>
+                    ) : (
+                      <span className="text-sm font-bold text-slate-400 cursor-not-allowed">
+                        Compartilhar →
+                      </span>
+                    )}
                   </div>
                   {(() => {
                     const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
@@ -319,9 +336,13 @@ export const MeetingDetailsPage = () => {
             </div>
             
             <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-colors" onClick={() => {
-                window.open(validationUrl, '_blank');
-              }}>
+              <button 
+                className={`w-full text-left px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-3 transition-colors ${!validationUrl ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-50'}`}
+                disabled={!validationUrl}
+                onClick={() => {
+                  if (validationUrl) window.open(validationUrl, '_blank');
+                }}
+              >
                 <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 15.938 10.777 17.94 13.394 17.94c1.694 0 3.179-.779 4.169-2m0 0a9.958 9.958 0 001.541-9.99m-2.182 10.727a9.009 9.009 0 01-4.546.893c-1.524 0-2.976-.356-4.243-1m0 0H2.708m0 0h.027"></path></svg>
                 Compartilhe esta reunião
               </button>

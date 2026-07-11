@@ -706,10 +706,12 @@ const SidePanel = () => {
                     onClick={() => {
                       if (usage.count >= usage.limit) {
                         openPaywall('Link Mágico WhatsApp');
-                      } else if (activeMeeting) {
-                        const validationLink = `https://todeacordo.com.br/index.html?route=/valida/${activeMeeting.id}`;
+                      } else if (consensus && consensus.id) {
+                        const validationLink = `https://todeacordo.com.br/app?route=/valida/${consensus.id}`;
                         navigator.clipboard.writeText(validationLink);
                         alert('Link de confirmação do WhatsApp copiado para sua área de transferência!');
+                      } else {
+                        alert('Nenhum entendimento foi gerado para compartilhar.');
                       }
                     }}
                     className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium py-2 px-2 rounded transition-colors shadow-sm flex items-center justify-center gap-1 border border-slate-200"

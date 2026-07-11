@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { getConsensusForMeeting, saveConsensus } from '../storage/consensusStorage';
+import { getConsensus, saveConsensus } from '../storage/consensusStorage';
 import type { ConsensusObject } from '../types';
 import { logEvent } from '../audit/auditLogger';
 import { trackGrowthEvent, getOrCreateReferralCode } from '../growth/growthLogger';
@@ -8,6 +8,8 @@ import { MOCK_CONSENSUS, MOCK_CONSENSUS_CONSULTORIA } from '../lib/mockData';
 
 import { ToDeAcordoBadge } from '../components/ToDeAcordoBadge';
 import { useWebShare } from '../components/CopyEngines';
+
+const ENABLE_SIGNATURE_FLOW = false;
 
 const ValidationPage = () => {
   const [consensus, setConsensus] = useState<ConsensusObject | null>(null);
@@ -38,7 +40,7 @@ const ValidationPage = () => {
 
   const { share } = useWebShare();
   const myRef = getOrCreateReferralCode(claimEmail || signerName);
-  const shareUrl = `${window.location.origin}${window.location.pathname}?ref=${myRef}&utm_source=todeacordo&utm_medium=validation_link&utm_campaign=shared_consensus`;
+  const shareUrl = consensus?.id ? `${window.location.origin}/app?route=/valida/${consensus.id}&ref=${myRef}&utm_source=todeacordo&utm_medium=validation_link&utm_campaign=shared_consensus` : '';
 
   useEffect(() => {
     let meetingId = '';
@@ -68,7 +70,7 @@ const ValidationPage = () => {
         logEvent(id, 'validation_link_opened');
         return;
       }
-      const data = await getConsensusForMeeting(id);
+      const data = await getConsensus(id);
       if (data) {
         setConsensus(data);
         const hash = await generateConsensusHash(data);
@@ -236,6 +238,42 @@ const ValidationPage = () => {
     }, 1000);
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Confirmação copiada. Envie à outra parte.");
+    } catch (err) {
+      alert("Erro ao copiar confirmação.");
+    }
+  };
+
+  const handleSimpleConfirm = async () => {
+    if (consensus && consensus.id !== 'demo') {
+      try {
+        await saveConsensus(consensus);
+      } catch (e) {
+        console.error('Falha ao salvar consenso antes de confirmar', e);
+      }
+    }
+    const version = consensus?.current_version || 1;
+    const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
+    const text = `Li e estou de acordo com a Versão ${version} deste entendimento: ${link}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Confirmação de Entendimento',
+          text: text,
+        });
+      } catch (err) {
+        console.error('Error sharing:', err);
+        await copyToClipboard(text);
+      }
+    } else {
+      await copyToClipboard(text);
+    }
+  };
+
   const handleSignClick = () => {
     if (!signerName.trim() || !claimEmail.trim()) {
       setPendingAction('sign');
@@ -251,6 +289,19 @@ const ValidationPage = () => {
       setShowClaimModal(true);
     } else {
       setShowObjectionModal(true);
+    }
+  };
+
+  const handleShareClick = async () => {
+    if (consensus && consensus.id !== 'demo') {
+      try {
+        await saveConsensus(consensus);
+      } catch (e) {
+        console.error('Falha ao salvar consenso antes de compartilhar', e);
+      }
+    }
+    if (consensus) {
+      share(`Entendimento: ${consensus.title}`, 'Confira nosso entendimento:', shareUrl);
     }
   };
 
@@ -273,7 +324,7 @@ const ValidationPage = () => {
         <div className={`bg-white p-8 rounded-xl shadow text-center max-w-md animate-fadeIn border-t-4 border-amber-500`}>
           <div className="text-5xl mb-4">✍️</div>
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Ressalvas Registradas</h2>
-          <p className="text-slate-500 mb-6">O criador deste documento foi notificado sobre as suas ressalvas.</p>
+          <p className="text-slate-500 mb-6">A outra parte foi notificada sobre as suas ressalvas.</p>
           
           <div className="mt-8 pt-6 border-t border-slate-100">
             <p className="text-sm text-slate-500 mb-3">Reuniões geram mal-entendidos. Nós geramos acordos.</p>
@@ -427,19 +478,28 @@ const ValidationPage = () => {
                 >
                   Sugerir Ajuste
                 </button>
-                <button 
-                  onClick={handleSignClick}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg py-3 px-12 rounded shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-                >
-                  Tô De Acordo
-                </button>
+                {ENABLE_SIGNATURE_FLOW ? (
+                  <button 
+                    onClick={handleSignClick}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg py-3 px-12 rounded shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                  >
+                    Tô De Acordo
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleSimpleConfirm}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg py-3 px-12 rounded shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                  >
+                    Enviar minha confirmação
+                  </button>
+                )}
               </div>
                 <div className="flex justify-center mt-8 space-x-4 print:hidden">
                 <button onClick={() => window.print()} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2">
                   <span>📄</span> Exportar PDF
                 </button>
                 <button 
-                  onClick={() => share(`Entendimento: ${consensus.title}`, 'Confira nosso entendimento:', shareUrl)}
+                  onClick={handleShareClick}
                   className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2 border border-indigo-200"
                 >
                   <span>🔗</span> Compartilhar
@@ -464,13 +524,13 @@ const ValidationPage = () => {
             </>
           )}
 
-          {signed && (
+          {ENABLE_SIGNATURE_FLOW && signed && (
             <div className="py-8 animate-fadeIn relative z-10">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
                 <span className="text-4xl text-green-500">✓</span>
               </div>
               <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Entendimento Validado!</h2>
-              <p className="text-slate-600 mb-8 max-w-lg mx-auto">Sua confirmação foi enviada para o criador. Vocês acabaram de evitar um mal-entendido.</p>
+              <p className="text-slate-600 mb-8 max-w-lg mx-auto">Sua confirmação foi enviada para a outra parte. Vocês acabaram de evitar um mal-entendido.</p>
               
               {/* VIRAL UNICORN BLOCK */}
               <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-violet-900 rounded-3xl p-8 shadow-2xl text-white text-left relative overflow-hidden mb-10 transform hover:scale-[1.01] transition-transform print:hidden">
@@ -561,7 +621,7 @@ const ValidationPage = () => {
                 >
                   📄 Baixar PDF Corporativo
                 </button>
-                <a href="/" className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-sm py-3 px-8 rounded transition-colors">
+                <a href="https://todeacordo.com.br/app?route=/dashboard" className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-sm py-3 px-8 rounded transition-colors">
                   Quero gerar o meu
                 </a>
               </div>
@@ -569,7 +629,7 @@ const ValidationPage = () => {
           )}
 
           {/* Soft Gate Claim Modal (Fase 11) */}
-          {showClaimModal && (
+          {ENABLE_SIGNATURE_FLOW && showClaimModal && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
               <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col text-center p-8 relative">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-bl-full -z-10 opacity-50"></div>
@@ -637,7 +697,7 @@ const ValidationPage = () => {
           )}
 
           {/* Signature Modal */}
-          {showSignatureModal && (
+          {ENABLE_SIGNATURE_FLOW && showSignatureModal && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
               <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
                 <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
