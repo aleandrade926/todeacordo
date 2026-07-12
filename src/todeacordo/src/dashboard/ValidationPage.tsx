@@ -279,7 +279,7 @@ const ValidationPage = () => {
     
     const version = consensus?.current_version || 1;
     const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
-    const text = `CONFIRMAÇÃO — ToDeAcordo\n\n${nome} informou que está de acordo com:\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nLink:\n${link}`;
+    const text = `CONFIRMAÇÃO — ToDeAcordo\n\n${nome} informou que está de acordo com:\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nLink:\n${link}\n\n_Crie seus próprios entendimentos com a extensão ToDeAcordo para Google Meet: todeacordo.com.br_`;
     
     await handleSmartShare(text);
   };
@@ -309,9 +309,27 @@ const ValidationPage = () => {
   const handleSimpleObjectionSubmitShare = async () => {
     if (!simpleObjectionText.trim()) return alert("Por favor, digite a sugestão de ajuste.");
     
+    if (consensus) {
+      try {
+        const updatedConsensus = {
+          ...consensus,
+          pending_suggestion: simpleObjectionText,
+          updated_at: Date.now(),
+          status: 'pending_review' as any
+        };
+        await saveConsensus(updatedConsensus);
+      } catch (err) {
+        console.error('Falha ao salvar sugestão', err);
+      }
+    }
+    
     const version = consensus?.current_version || 1;
-    const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
-    const text = `SUGESTÃO DE AJUSTE — ToDeAcordo\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nSugestão:\n${simpleObjectionText}\n\nLink:\n${link}`;
+    const meetingId = consensus?.meeting_id || consensus?.id;
+    const link = `${window.location.origin}/app?route=/meeting/${meetingId}&action=edit`;
+    
+    const suggestionLines = simpleObjectionText.split('\n').map(line => line.trim() ? `_${line}_` : '').join('\n');
+    
+    const text = `SUGESTÃO DE AJUSTE — ToDeAcordo\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\n*Sugestão:*\n${suggestionLines}\n\nLink para Editar:\n${link}\n\n_Crie seus próprios entendimentos com a extensão ToDeAcordo para Google Meet: todeacordo.com.br_`;
 
     await handleSmartShare(text);
     
