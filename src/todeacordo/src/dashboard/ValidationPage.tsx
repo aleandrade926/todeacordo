@@ -254,10 +254,11 @@ const ValidationPage = () => {
     }
   };
 
-  const handleSmartShare = async (text: string) => {
+  const handleSmartShare = async (text: string, preOpenedWindow?: Window | null) => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile && navigator.share) {
+      if (preOpenedWindow) preOpenedWindow.close();
       try {
         await navigator.share({ text: text });
       } catch (err) {
@@ -267,9 +268,13 @@ const ValidationPage = () => {
       }
     } else {
       const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-      const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
-      if (!win) {
-        await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp Web e cole para enviar.");
+      if (preOpenedWindow) {
+        preOpenedWindow.location.href = waUrl;
+      } else {
+        const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp Web e cole para enviar.");
+        }
       }
     }
   };
@@ -310,6 +315,13 @@ const ValidationPage = () => {
 
   const handleSimpleObjectionSubmitShare = async () => {
     if (!simpleObjectionText.trim()) return alert("Por favor, digite a sugestão de ajuste.");
+    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    let preWin: Window | null = null;
+    if (!isMobile) {
+      preWin = window.open('about:blank', '_blank', 'noopener,noreferrer');
+    }
+
     const nameStr = objectionName.trim() || 'A Parte 2';
     
     if (consensus) {
@@ -336,7 +348,7 @@ const ValidationPage = () => {
     
     const text = `SUGESTÃO DE AJUSTE — ToDeAcordo\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\n*Sugestão:*\n${suggestionLines}\n\nLink para Editar:\n${link}\n\n_Crie seus próprios entendimentos com a extensão ToDeAcordo para Google Meet: todeacordo.com.br_`;
 
-    await handleSmartShare(text);
+    await handleSmartShare(text, preWin);
     
     setShowSimpleObjectionModal(false);
     setSimpleObjectionText('');
