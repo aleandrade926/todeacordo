@@ -26,6 +26,55 @@ export const MeetingDetailsPage = () => {
   const [currentMeetingId, setCurrentMeetingId] = useState<string>('');
   const autoGenerateRef = useRef(false);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editSummary, setEditSummary] = useState('');
+  const [editAgreements, setEditAgreements] = useState<string[]>([]);
+  const [editDecisions, setEditDecisions] = useState<string[]>([]);
+  const [editObligations, setEditObligations] = useState<string[]>([]);
+
+  const startEditing = () => {
+    setEditSummary(consensus?.summary || '');
+    setEditAgreements((consensus?.agreements || []).map(a => typeof a === 'string' ? a : a.text));
+    setEditDecisions((consensus?.decisions || []).map(a => typeof a === 'string' ? a : a.text));
+    setEditObligations((consensus?.obligations || []).map(a => typeof a === 'string' ? a : a.text));
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!consensus) return;
+    const previousVersion = {
+      version: consensus.current_version || 1,
+      created_at: Date.now(),
+      content: {
+        summary: consensus.summary,
+        agreements: consensus.agreements,
+        decisions: consensus.decisions,
+        obligations: consensus.obligations,
+      }
+    };
+    const updatedConsensus = {
+      ...consensus,
+      summary: editSummary,
+      agreements: editAgreements.filter(a => a.trim() !== '').map(text => ({ text })),
+      decisions: editDecisions.filter(d => d.trim() !== '').map(text => ({ text })),
+      obligations: editObligations.filter(o => o.trim() !== '').map(text => ({ text })),
+      current_version: (consensus.current_version || 1) + 1,
+      consensus_versions: [...(consensus.consensus_versions || []), previousVersion],
+      updated_at: Date.now(),
+      status: 'pending_review' as any
+    };
+    
+    try {
+      await saveConsensus(updatedConsensus);
+      setConsensus(updatedConsensus);
+      setIsEditing(false);
+      alert('Nova versão salva com sucesso!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao salvar nova versão.');
+    }
+  };
+
   useEffect(() => {
     let meetingId = '';
     const urlParams = new URLSearchParams(window.location.search);
@@ -248,15 +297,22 @@ export const MeetingDetailsPage = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-slate-900">Acordos Consolidados</h2>
-                    {validationUrl ? (
-                      <a href={validationUrl} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                        Compartilhar →
-                      </a>
-                    ) : (
-                      <span className="text-sm font-bold text-slate-400 cursor-not-allowed">
-                        Compartilhar →
-                      </span>
-                    )}
+                    <div className="flex gap-4">
+                      {consensus && !isEditing && (
+                        <button onClick={startEditing} className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                          Editar Entendimento
+                        </button>
+                      )}
+                      {validationUrl ? (
+                        <a href={validationUrl} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                          Compartilhar →
+                        </a>
+                      ) : (
+                        <span className="text-sm font-bold text-slate-400 cursor-not-allowed">
+                          Compartilhar →
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {(() => {
                     const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
@@ -281,31 +337,88 @@ export const MeetingDetailsPage = () => {
                         </div>
                       );
                     }
+                    if (isEditing) {
+                      const renderEditor = (title: string, items: string[], setItems: (v: string[]) => void) => (
+                        <div className="mb-6">
+                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">{title}</h3>
+                          <div className="space-y-2">
+                            {items.map((item, i) => (
+                              <div key={i} className="flex gap-2">
+                                <input value={item} onChange={e => { const newItems = [...items]; newItems[i] = e.target.value; setItems(newItems); }} className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                                <button onClick={() => { const newItems = items.filter((_, idx) => idx !== i); setItems(newItems); }} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100">🗑</button>
+                              </div>
+                            ))}
+                            <button onClick={() => setItems([...items, ''])} className="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-200 w-full">+ Adicionar</button>
+                          </div>
+                        </div>
+                      );
+                      
+                      return (
+                        <div className="space-y-6">
+                          <div className="mb-6">
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Resumo</h3>
+                            <textarea value={editSummary} onChange={e => setEditSummary(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm min-h-[100px]" />
+                          </div>
+                          
+                          {renderEditor("Acordos Principais", editAgreements, setEditAgreements)}
+                          {renderEditor("Decisões", editDecisions, setEditDecisions)}
+                          {renderEditor("Próximos Passos (Obrigações)", editObligations, setEditObligations)}
+                          
+                          <div className="flex gap-4 pt-4 border-t border-slate-200">
+                            <button onClick={() => setIsEditing(false)} className="px-6 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
+                            <button onClick={handleSaveEdit} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors">Salvar nova versão</button>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
-                          <ul className="space-y-2">
-                            {consensus!.decisions?.map((d: any, i) => (
-                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Próximos Passos (Obrigações)</h3>
-                          <ul className="space-y-2">
-                            {consensus!.obligations?.map((o: any, i) => (
-                              <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
-                                <span className="text-indigo-500">→</span>
-                                <div>
-                                  <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                        {consensus!.summary && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Resumo</h3>
+                            <p className="bg-slate-50 p-4 rounded-xl text-slate-700 whitespace-pre-wrap">{consensus!.summary}</p>
+                          </div>
+                        )}
+                        {(consensus!.agreements?.length ?? 0) > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Acordos Principais</h3>
+                            <ul className="space-y-2">
+                              {consensus!.agreements?.map((d: any, i) => (
+                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  <span className="text-green-500">🤝</span> {typeof d === 'string' ? d : d.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {(consensus!.decisions?.length ?? 0) > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Decisões</h3>
+                            <ul className="space-y-2">
+                              {consensus!.decisions?.map((d: any, i) => (
+                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  <span className="text-amber-500">✓</span> {typeof d === 'string' ? d : d.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {(consensus!.obligations?.length ?? 0) > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Próximos Passos (Obrigações)</h3>
+                            <ul className="space-y-2">
+                              {consensus!.obligations?.map((o: any, i) => (
+                                <li key={i} className="flex gap-3 bg-slate-50 p-4 rounded-xl text-slate-700">
+                                  <span className="text-indigo-500">→</span>
+                                  <div>
+                                    <span className="font-bold">{(typeof o !== 'string' && o.owner) ? `${o.owner}: ` : ''}</span>{typeof o === 'string' ? o : o.text}
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}

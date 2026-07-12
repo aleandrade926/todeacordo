@@ -10,6 +10,7 @@ import { ToDeAcordoBadge } from '../components/ToDeAcordoBadge';
 import { useWebShare } from '../components/CopyEngines';
 
 const ENABLE_SIGNATURE_FLOW = false;
+const ENABLE_LEGACY_OBJECTION_FLOW = false;
 
 const ValidationPage = () => {
   const [consensus, setConsensus] = useState<ConsensusObject | null>(null);
@@ -37,6 +38,10 @@ const ValidationPage = () => {
   const [showObjectionModal, setShowObjectionModal] = useState(false);
   const [itemObjections, setItemObjections] = useState<Record<string, {status: 'accepted'|'adjust'|'rejected', note: string}>>({});
   const [generalObjection, setGeneralObjection] = useState('');
+
+  // Simple Objection State (QA 013)
+  const [showSimpleObjectionModal, setShowSimpleObjectionModal] = useState(false);
+  const [simpleObjectionText, setSimpleObjectionText] = useState('');
 
   const { share } = useWebShare();
   const myRef = getOrCreateReferralCode(claimEmail || signerName);
@@ -241,33 +246,38 @@ const ValidationPage = () => {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert("Confirmação copiada. Envie à outra parte.");
+      alert("Mensagem copiada. Envie à outra parte.");
     } catch (err) {
-      alert("Erro ao copiar confirmação.");
+      alert("Erro ao copiar mensagem.");
     }
   };
 
   const handleSimpleConfirm = async () => {
-    if (consensus && consensus.id !== 'demo') {
-      try {
-        await saveConsensus(consensus);
-      } catch (e) {
-        console.error('Falha ao salvar consenso antes de confirmar', e);
-      }
-    }
+    const nomeInput = window.prompt("Qual o seu nome? Deixe em branco para continuar como Parte 2.");
+    if (nomeInput === null) return;
+    const nome = nomeInput.trim() || "Parte 2";
+    
     const version = consensus?.current_version || 1;
     const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
-    const text = `Li e estou de acordo com a Versão ${version} deste entendimento: ${link}`;
+    const text = `CONFIRMAÇÃO — ToDeAcordo
+
+${nome} informou que está de acordo com:
+
+Entendimento: ${consensus?.title || 'Sem título'}
+Versão: ${version}
+
+Link:
+${link}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Confirmação de Entendimento',
           text: text,
         });
       } catch (err) {
-        console.error('Error sharing:', err);
-        await copyToClipboard(text);
+        if ((err as Error).name !== 'AbortError') {
+          await copyToClipboard(text);
+        }
       }
     } else {
       await copyToClipboard(text);
@@ -284,12 +294,39 @@ const ValidationPage = () => {
   };
 
   const handleObjectionClick = () => {
-    if (!signerName.trim() || !claimEmail.trim()) {
-      setPendingAction('objection');
-      setShowClaimModal(true);
+    if (ENABLE_LEGACY_OBJECTION_FLOW) {
+      if (!signerName.trim() || !claimEmail.trim()) {
+        setPendingAction('objection');
+        setShowClaimModal(true);
+      } else {
+        setShowObjectionModal(true);
+      }
     } else {
-      setShowObjectionModal(true);
+      setShowSimpleObjectionModal(true);
     }
+  };
+
+  const handleSimpleObjectionSubmitShare = async () => {
+    if (!simpleObjectionText.trim()) return alert("Por favor, digite a sugestão de ajuste.");
+    
+    const version = consensus?.current_version || 1;
+    const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
+    const text = `SUGESTÃO DE AJUSTE — ToDeAcordo\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nSugestão:\n${simpleObjectionText}\n\nLink:\n${link}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: text });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          await copyToClipboard(text);
+        }
+      }
+    } else {
+      await copyToClipboard(text);
+    }
+    
+    setShowSimpleObjectionModal(false);
+    setSimpleObjectionText('');
   };
 
   const handleShareClick = async () => {
@@ -758,6 +795,47 @@ const ValidationPage = () => {
                     className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold rounded shadow-sm flex items-center gap-2"
                   >
                     <span>✒️</span> Confirmar e Aceitar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Simple Objection Modal (QA 013) */}
+          {showSimpleObjectionModal && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn overflow-y-auto">
+              <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden flex flex-col my-8">
+                <div className="bg-amber-50 px-6 py-4 border-b border-amber-200 flex justify-between items-center sticky top-0 z-10">
+                  <h3 className="font-bold text-amber-900 text-lg flex items-center gap-2">
+                    <span className="text-xl">✍️</span> Sugerir Ajuste
+                  </h3>
+                  <button onClick={() => setShowSimpleObjectionModal(false)} className="text-amber-700 hover:text-amber-900">
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="p-6">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Qual alteração você propõe?</label>
+                  <textarea 
+                    value={simpleObjectionText}
+                    onChange={e => setSimpleObjectionText(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:border-amber-500 min-h-[120px]"
+                    placeholder="Ex: O prazo deveria ser dia 20, e não dia 15..."
+                  ></textarea>
+                </div>
+
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0 z-10">
+                  <button 
+                    onClick={() => setShowSimpleObjectionModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleSimpleObjectionSubmitShare}
+                    className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded shadow-sm"
+                  >
+                    Gerar Mensagem
                   </button>
                 </div>
               </div>
