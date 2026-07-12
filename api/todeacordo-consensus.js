@@ -2,7 +2,7 @@
 // Substitui o express do backend/server.js
 
 const LLAMA_API_URL = process.env.LLAMA_API_URL || 'https://api.groq.com/openai/v1/chat/completions';
-const LLAMA_API_KEY = process.env.LLAMA_API_KEY || process.env.GROQ_API_KEY || '';
+const LLAMA_API_KEY = process.env.GROQ_API_KEY || process.env.LLAMA_API_KEY || '';
 const LLAMA_MODEL = process.env.LLAMA_MODEL || 'llama-3.3-70b-versatile';
 
 const SYSTEM_PROMPT = `Você é um assistente de extração de acordos operacionais estritamente baseado no transcript fornecido.
