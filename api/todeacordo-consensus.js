@@ -1,5 +1,16 @@
+import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
 // Vercel Serverless Function para o ToDeAcordo
 // Substitui o express do backend/server.js
+
 
 const LLAMA_API_URL = process.env.LLAMA_API_URL || 'https://api.groq.com/openai/v1/chat/completions';
 const LLAMA_API_KEY = process.env.GROQ_API_KEY || process.env.LLAMA_API_KEY || '';
@@ -170,15 +181,42 @@ export default async function handler(req, res) {
       parsedContent.confidence_score = 0;
     }
 
-    res.status(200).json({
+    const consensusId = crypto.randomUUID();
+    const consensusMeetingId = meeting_id || crypto.randomUUID();
+
+    const responsePayload = {
       ...parsedContent,
+      id: consensusId,
+      meeting_id: consensusMeetingId,
       model: LLAMA_MODEL,
       provider: 'vercel-edge',
       is_mock: false,
       generated_at: Date.now(),
       transcript_char_count: charCount,
       transcript_segment_count: segmentCount
-    });
+    };
+
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('consensus')
+          .upsert({
+            id: consensusId,
+            meeting_id: consensusMeetingId,
+            data: responsePayload,
+            updated_at: new Date().toISOString()
+          });
+        if (error) {
+          console.error('[SupabaseServerSync] Error syncing consensus to Supabase:', error);
+        } else {
+          console.log(`[SupabaseServerSync] Consensus ${consensusId} successfully synced from API!`);
+        }
+      } catch (err) {
+        console.error('[SupabaseServerSync] Failed to sync consensus to Supabase:', err);
+      }
+    }
+
+    res.status(200).json(responsePayload);
 
   } catch (error) {
     console.error('[Vercel ToDeAcordo] Erro interno:', error);
