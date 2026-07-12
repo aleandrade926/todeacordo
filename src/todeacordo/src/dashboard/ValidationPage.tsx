@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { getConsensus, saveConsensus } from '../storage/consensusStorage';
+import { getConsensus, saveConsensus, getConsensusForMeeting } from '../storage/consensusStorage';
 import type { ConsensusObject } from '../types';
 import { logEvent } from '../audit/auditLogger';
 import { trackGrowthEvent, getOrCreateReferralCode } from '../growth/growthLogger';
@@ -81,7 +81,10 @@ const ValidationPage = () => {
         logEvent(id, 'validation_link_opened');
         return;
       }
-      const data = await getConsensus(id);
+      let data = await getConsensus(id);
+      if (!data) {
+        data = await getConsensusForMeeting(id);
+      }
       if (data) {
         setConsensus(data);
         const hash = await generateConsensusHash(data);
