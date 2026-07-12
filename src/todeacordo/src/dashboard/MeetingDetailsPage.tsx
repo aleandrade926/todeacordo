@@ -32,6 +32,8 @@ export const MeetingDetailsPage = () => {
   const [editDecisions, setEditDecisions] = useState<string[]>([]);
   const [editObligations, setEditObligations] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [suggestedEdit, setSuggestedEdit] = useState<string | null>(null);
+  const autoEditTriggered = useRef(false);
 
   const startEditing = () => {
     setEditSummary(consensus?.summary || '');
@@ -78,6 +80,20 @@ export const MeetingDetailsPage = () => {
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (consensus && !autoEditTriggered.current) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('action') === 'edit') {
+        autoEditTriggered.current = true;
+        startEditing();
+        const suggestion = urlParams.get('suggestion');
+        if (suggestion) {
+          setSuggestedEdit(suggestion);
+        }
+      }
+    }
+  }, [consensus]);
 
   useEffect(() => {
     let meetingId = '';
@@ -359,6 +375,12 @@ export const MeetingDetailsPage = () => {
                       
                       return (
                         <div className="space-y-6">
+                          {suggestedEdit && (
+                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                              <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-2">💡 Sugestão de Ajuste (Recebida via WhatsApp)</h3>
+                              <p className="text-amber-900 whitespace-pre-wrap text-sm">{suggestedEdit}</p>
+                            </div>
+                          )}
                           <div className="mb-6">
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Resumo</h3>
                             <textarea value={editSummary} onChange={e => setEditSummary(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm min-h-[100px]" />
