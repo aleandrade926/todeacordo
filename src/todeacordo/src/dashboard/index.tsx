@@ -602,9 +602,21 @@ const DashboardApp = () => {
           )}
 
           {/* Social / Network Effect Indicator */}
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-8 flex items-center gap-3">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">📈</div>
             <p className="text-sm text-indigo-900 font-medium"><strong>47 pessoas</strong> já confirmaram entendimentos enviados por você.</p>
+          </div>
+
+          {/* Extension Usage Instructions / Language Warning Banner */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 flex gap-3 items-start shadow-sm">
+            <span className="text-xl">⚠️</span>
+            <div className="text-xs sm:text-sm text-amber-900">
+              <p className="font-bold">Atenção ao usar a extensão no Google Meet:</p>
+              <p className="mt-1 text-amber-800 leading-relaxed">
+                As legendas do Google Meet precisam estar <strong>ativas</strong> e configuradas para o idioma <strong>Português (Brasil)</strong> para que a captura funcione corretamente.
+                Se o seu Meet ou navegador estiver configurado em outro idioma, clique no botão de <strong>Mais opções (Três pontos) &gt; Legendas</strong> no Meet e altere para <strong>Português (Brasil)</strong>.
+              </p>
+            </div>
           </div>
 
           <div className="relative mb-6">
