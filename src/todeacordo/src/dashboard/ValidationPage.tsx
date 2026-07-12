@@ -243,12 +243,32 @@ const ValidationPage = () => {
     }, 1000);
   };
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, customAlert?: string | null) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert("Mensagem copiada. Envie à outra parte.");
+      if (customAlert !== null) alert(customAlert || "Mensagem copiada. Envie à outra parte.");
     } catch (err) {
-      alert("Erro ao copiar mensagem.");
+      if (customAlert !== null) alert("Erro ao copiar mensagem.");
+    }
+  };
+
+  const handleSmartShare = async (text: string) => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && navigator.share) {
+      try {
+        await navigator.share({ text: text });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          await copyToClipboard(text);
+        }
+      }
+    } else {
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp Web e cole para enviar.");
+      }
     }
   };
 
@@ -259,29 +279,9 @@ const ValidationPage = () => {
     
     const version = consensus?.current_version || 1;
     const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
-    const text = `CONFIRMAÇÃO — ToDeAcordo
-
-${nome} informou que está de acordo com:
-
-Entendimento: ${consensus?.title || 'Sem título'}
-Versão: ${version}
-
-Link:
-${link}`;
+    const text = `CONFIRMAÇÃO — ToDeAcordo\n\n${nome} informou que está de acordo com:\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nLink:\n${link}`;
     
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          text: text,
-        });
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          await copyToClipboard(text);
-        }
-      }
-    } else {
-      await copyToClipboard(text);
-    }
+    await handleSmartShare(text);
   };
 
   const handleSignClick = () => {
@@ -313,17 +313,7 @@ ${link}`;
     const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
     const text = `SUGESTÃO DE AJUSTE — ToDeAcordo\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nSugestão:\n${simpleObjectionText}\n\nLink:\n${link}`;
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ text: text });
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          await copyToClipboard(text);
-        }
-      }
-    } else {
-      await copyToClipboard(text);
-    }
+    await handleSmartShare(text);
     
     setShowSimpleObjectionModal(false);
     setSimpleObjectionText('');
