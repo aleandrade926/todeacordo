@@ -45,6 +45,10 @@ const ValidationPage = () => {
   const [objectionName, setObjectionName] = useState('');
   const [objectionPhone, setObjectionPhone] = useState('');
 
+  // Simple Confirm State
+  const [showSimpleConfirmModal, setShowSimpleConfirmModal] = useState(false);
+  const [confirmName, setConfirmName] = useState('');
+
   const { share } = useWebShare();
   const myRef = getOrCreateReferralCode(claimEmail || signerName);
   const shareUrl = consensus?.id ? `${window.location.origin}/app?route=/valida/${consensus.id}&ref=${myRef}&utm_source=todeacordo&utm_medium=validation_link&utm_campaign=shared_consensus` : '';
@@ -254,41 +258,8 @@ const ValidationPage = () => {
     }
   };
 
-  const handleSmartShare = async (text: string, preOpenedWindow?: Window | null) => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile && navigator.share) {
-      if (preOpenedWindow) preOpenedWindow.close();
-      try {
-        await navigator.share({ text: text });
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          await copyToClipboard(text);
-        }
-      }
-    } else {
-      const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-      if (preOpenedWindow) {
-        preOpenedWindow.location.href = waUrl;
-      } else {
-        const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
-        if (!win) {
-          await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp Web e cole para enviar.");
-        }
-      }
-    }
-  };
-
-  const handleSimpleConfirm = async () => {
-    const nomeInput = window.prompt("Qual o seu nome? Deixe em branco para continuar como Parte 2.");
-    if (nomeInput === null) return;
-    const nome = nomeInput.trim() || "Parte 2";
-    
-    const version = consensus?.current_version || 1;
-    const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
-    const text = `CONFIRMAÇÃO — ToDeAcordo\n\n${nome} informou que está de acordo com:\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nLink:\n${link}\n\n_Crie seus próprios entendimentos com a extensão ToDeAcordo para Google Meet: todeacordo.com.br_`;
-    
-    await handleSmartShare(text);
+  const handleSimpleConfirmClick = () => {
+    setShowSimpleConfirmModal(true);
   };
 
   const handleSignClick = () => {
@@ -313,17 +284,8 @@ const ValidationPage = () => {
     }
   };
 
-  const handleSimpleObjectionSubmitShare = async () => {
-    if (!simpleObjectionText.trim()) return alert("Por favor, digite a sugestão de ajuste.");
-    
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    let preWin: Window | null = null;
-    if (!isMobile) {
-      preWin = window.open('about:blank', '_blank', 'noopener,noreferrer');
-    }
-
+  const saveObjectionToDbAsync = async () => {
     const nameStr = objectionName.trim() || 'A Parte 2';
-    
     if (consensus) {
       try {
         const updatedConsensus = {
@@ -339,19 +301,60 @@ const ValidationPage = () => {
         console.error('Falha ao salvar sugestão', err);
       }
     }
-    
+  };
+
+  const getObjectionWaText = () => {
     const version = consensus?.current_version || 1;
     const meetingId = consensus?.meeting_id || consensus?.id;
     const link = `${window.location.origin}/app?route=/meeting/${meetingId}&action=edit`;
-    
     const suggestionLines = simpleObjectionText.split('\n').map(line => line.trim() ? `_${line}_` : '').join('\n');
-    
-    const text = `SUGESTÃO DE AJUSTE — ToDeAcordo\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\n*Sugestão:*\n${suggestionLines}\n\nLink para Editar:\n${link}\n\n_Crie seus próprios entendimentos com a extensão ToDeAcordo para Google Meet: todeacordo.com.br_`;
+    return `SUGESTÃO DE AJUSTE — ToDeAcordo\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\n*Sugestão:*\n${suggestionLines}\n\nLink para Editar:\n${link}\n\n_Crie seus próprios entendimentos com a extensão ToDeAcordo para Google Meet: todeacordo.com.br_`;
+  };
 
-    await handleSmartShare(text, preWin);
+  const handleSimpleObjectionSubmitMobile = async () => {
+    if (!simpleObjectionText.trim()) return alert("Por favor, digite a sugestão de ajuste.");
+    
+    // Fire and forget save
+    saveObjectionToDbAsync();
+    
+    const text = getObjectionWaText();
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+      } else {
+        await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp e cole para enviar.");
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp e cole para enviar.");
+      }
+    }
     
     setShowSimpleObjectionModal(false);
     setSimpleObjectionText('');
+  };
+
+  const getConfirmWaText = (nome: string) => {
+    const version = consensus?.current_version || 1;
+    const link = `${window.location.origin}/app?route=/valida/${consensus?.id}`;
+    return `CONFIRMAÇÃO — ToDeAcordo\n\n${nome} informou que está de acordo com:\n\nEntendimento: ${consensus?.title || 'Sem título'}\nVersão: ${version}\n\nLink:\n${link}\n\n_Crie seus próprios entendimentos com a extensão ToDeAcordo para Google Meet: todeacordo.com.br_`;
+  };
+
+  const handleSimpleConfirmMobile = async () => {
+    const nome = confirmName.trim() || "Parte 2";
+    const text = getConfirmWaText(nome);
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+      } else {
+        await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp e cole para enviar.");
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        await copyToClipboard(text, "Mensagem copiada. Abra o WhatsApp e cole para enviar.");
+      }
+    }
+    setShowSimpleConfirmModal(false);
   };
 
   const handleShareClick = async () => {
@@ -549,7 +552,7 @@ const ValidationPage = () => {
                   </button>
                 ) : (
                   <button 
-                    onClick={handleSimpleConfirm}
+                    onClick={handleSimpleConfirmClick}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg py-3 px-12 rounded shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                   >
                     Enviar minha confirmação
@@ -880,12 +883,33 @@ const ValidationPage = () => {
                   >
                     Cancelar
                   </button>
-                  <button 
-                    onClick={handleSimpleObjectionSubmitShare}
-                    className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded shadow-sm"
-                  >
-                    Gerar Mensagem
-                  </button>
+                  {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? (
+                    <button 
+                      onClick={handleSimpleObjectionSubmitMobile}
+                      className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded shadow-sm"
+                    >
+                      Gerar Mensagem
+                    </button>
+                  ) : (
+                    <a 
+                      href={`https://wa.me/?text=${encodeURIComponent(getObjectionWaText())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (!simpleObjectionText.trim()) {
+                          e.preventDefault();
+                          alert("Por favor, digite a sugestão de ajuste.");
+                          return;
+                        }
+                        saveObjectionToDbAsync();
+                        setShowSimpleObjectionModal(false);
+                        setSimpleObjectionText('');
+                      }}
+                      className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded shadow-sm inline-block text-center"
+                    >
+                      Gerar Mensagem
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -1055,11 +1079,76 @@ const ValidationPage = () => {
           )}
 
           <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+            <button 
+              onClick={handleSimpleConfirmClick}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 mb-6"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Enviar minha confirmação
+            </button>
             <a href="/" className="text-xs text-slate-400 hover:text-indigo-600 flex items-center justify-center gap-1 transition-colors">
               <span className="font-semibold">Gerado com ToDeAcordo</span> — transforme suas reuniões em combinados claros ↗
             </a>
           </div>
         </div>
+        {/* Simple Confirm Modal */}
+        {showSimpleConfirmModal && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col my-8">
+              <div className="bg-emerald-50 px-6 py-4 border-b border-emerald-200 flex justify-between items-center">
+                <h3 className="font-bold text-emerald-900 text-lg flex items-center gap-2">
+                  <span className="text-xl">✅</span> Confirmar Entendimento
+                </h3>
+                <button onClick={() => setShowSimpleConfirmModal(false)} className="text-emerald-700 hover:text-emerald-900">
+                  ✕
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Qual o seu nome? (Opcional)</label>
+                <input 
+                  type="text"
+                  value={confirmName}
+                  onChange={e => setConfirmName(e.target.value)}
+                  placeholder="Ex: João, Parte 2"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0 z-10">
+                <button 
+                  onClick={() => setShowSimpleConfirmModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded transition-colors"
+                >
+                  Cancelar
+                </button>
+                {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? (
+                  <button 
+                    onClick={handleSimpleConfirmMobile}
+                    className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded shadow-sm"
+                  >
+                    Confirmar e Enviar
+                  </button>
+                ) : (
+                  <a 
+                    href={`https://wa.me/?text=${encodeURIComponent(getConfirmWaText(confirmName.trim() || 'Parte 2'))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      setShowSimpleConfirmModal(false);
+                    }}
+                    className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded shadow-sm inline-block text-center"
+                  >
+                    Confirmar e Enviar
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
