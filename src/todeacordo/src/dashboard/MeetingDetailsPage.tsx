@@ -31,6 +31,7 @@ export const MeetingDetailsPage = () => {
   const [editAgreements, setEditAgreements] = useState<string[]>([]);
   const [editDecisions, setEditDecisions] = useState<string[]>([]);
   const [editObligations, setEditObligations] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const startEditing = () => {
     setEditSummary(consensus?.summary || '');
@@ -42,6 +43,7 @@ export const MeetingDetailsPage = () => {
 
   const handleSaveEdit = async () => {
     if (!consensus) return;
+    setIsSaving(true);
     const previousVersion = {
       version: consensus.current_version || 1,
       created_at: Date.now(),
@@ -72,6 +74,8 @@ export const MeetingDetailsPage = () => {
     } catch (e) {
       console.error(e);
       alert('Erro ao salvar nova versão.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -365,8 +369,10 @@ export const MeetingDetailsPage = () => {
                           {renderEditor("Próximos Passos (Obrigações)", editObligations, setEditObligations)}
                           
                           <div className="flex gap-4 pt-4 border-t border-slate-200">
-                            <button onClick={() => setIsEditing(false)} className="px-6 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
-                            <button onClick={handleSaveEdit} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors">Salvar nova versão</button>
+                            <button onClick={() => setIsEditing(false)} disabled={isSaving} className="px-6 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Cancelar</button>
+                            <button onClick={handleSaveEdit} disabled={isSaving} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                              {isSaving ? 'Salvando...' : 'Salvar nova versão'}
+                            </button>
                           </div>
                         </div>
                       );
