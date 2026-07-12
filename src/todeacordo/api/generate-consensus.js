@@ -34,6 +34,55 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Transcript insuficiente.' });
     }
 
+    // Identificação automática de idioma para evitar legendas incorretas
+    function detectLanguage(text) {
+      const norm = text.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'’]/g, ' ')
+        .replace(/\s+/g, ' ');
+      const padded = ' ' + norm + ' ';
+      const enWords = [' the ', ' and ', ' you ', ' that ', ' is ', ' was ', ' for ', ' are ', ' with ', ' have ', ' this ', ' they ', ' would ', ' what ', ' because '];
+      const ptWords = [' que ', ' em ', ' um ', ' uma ', ' com ', ' para ', ' por ', ' como ', ' nao ', ' sim ', ' mais ', ' voce ', ' nos ', ' eles ', ' porque ', ' sobre ', ' tudo ', ' todos '];
+      let enCount = 0;
+      let ptCount = 0;
+      for (const w of enWords) {
+        let pos = padded.indexOf(w);
+        while (pos !== -1) {
+          enCount++;
+          pos = padded.indexOf(w, pos + 1);
+        }
+      }
+      for (const w of ptWords) {
+        let pos = padded.indexOf(w);
+        while (pos !== -1) {
+          ptCount++;
+          pos = padded.indexOf(w, pos + 1);
+        }
+      }
+      let posE = padded.indexOf(' e ');
+      while (posE !== -1) {
+        ptCount++;
+        posE = padded.indexOf(' e ', posE + 1);
+      }
+      let posY = padded.indexOf(' y ');
+      let esCount = 0;
+      while (posY !== -1) {
+        esCount++;
+        posY = padded.indexOf(' y ', posY + 1);
+      }
+      if (enCount > 2 && enCount > ptCount) return 'en';
+      if (esCount > 2 && esCount > ptCount) return 'es';
+      return 'pt';
+    }
+
+    const detectedLang = detectLanguage(conversationText);
+    if (detectedLang !== 'pt') {
+      const langName = detectedLang === 'en' ? 'Inglês' : 'Espanhol';
+      return res.status(400).json({ 
+        error: `O áudio/legenda da reunião está em ${langName}. Por favor, configure o idioma da legenda no Google Meet para Português (Brasil) e tente novamente.` 
+      });
+    }
+
     const userPrompt = buildPrompt(source_platform, participants, transcript_segments);
     
     let parsedData = null;
