@@ -65,7 +65,10 @@ export const MeetingDetailsPage = () => {
       current_version: (consensus.current_version || 1) + 1,
       consensus_versions: [...(consensus.consensus_versions || []), previousVersion],
       updated_at: Date.now(),
-      status: 'pending_review' as any
+      status: 'pending_review' as any,
+      pending_suggestion: null,
+      pending_suggestion_author: null,
+      pending_suggestion_phone: null
     };
     
     try {
@@ -87,7 +90,7 @@ export const MeetingDetailsPage = () => {
       if (urlParams.get('action') === 'edit') {
         autoEditTriggered.current = true;
         startEditing();
-        const suggestion = urlParams.get('suggestion');
+        const suggestion = urlParams.get('suggestion') || (consensus as any).pending_suggestion;
         if (suggestion) {
           setSuggestedEdit(suggestion);
         }
@@ -377,7 +380,7 @@ export const MeetingDetailsPage = () => {
                         <div className="space-y-6">
                           {suggestedEdit && (
                             <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                              <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-1">💡 A Parte 2 sugeriu um ajuste</h3>
+                              <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-1">💡 {(consensus as any).pending_suggestion_author || 'A Parte 2'} sugeriu um ajuste</h3>
                               <p className="text-amber-700 text-xs mb-3">Aplique as alterações nos campos abaixo e clique em <strong>"Salvar nova versão"</strong> para gerar um novo link de aprovação.</p>
                               <div className="bg-white/60 p-3 rounded-lg border border-amber-100">
                                 <p className="text-amber-900 whitespace-pre-wrap text-sm font-medium">{suggestedEdit}</p>

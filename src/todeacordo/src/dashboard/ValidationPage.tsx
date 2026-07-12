@@ -39,9 +39,11 @@ const ValidationPage = () => {
   const [itemObjections, setItemObjections] = useState<Record<string, {status: 'accepted'|'adjust'|'rejected', note: string}>>({});
   const [generalObjection, setGeneralObjection] = useState('');
 
-  // Simple Objection State (QA 013)
+  // Simple Objection State (QA 013 & Lead Capture)
   const [showSimpleObjectionModal, setShowSimpleObjectionModal] = useState(false);
   const [simpleObjectionText, setSimpleObjectionText] = useState('');
+  const [objectionName, setObjectionName] = useState('');
+  const [objectionPhone, setObjectionPhone] = useState('');
 
   const { share } = useWebShare();
   const myRef = getOrCreateReferralCode(claimEmail || signerName);
@@ -308,12 +310,15 @@ const ValidationPage = () => {
 
   const handleSimpleObjectionSubmitShare = async () => {
     if (!simpleObjectionText.trim()) return alert("Por favor, digite a sugestão de ajuste.");
+    const nameStr = objectionName.trim() || 'A Parte 2';
     
     if (consensus) {
       try {
         const updatedConsensus = {
           ...consensus,
           pending_suggestion: simpleObjectionText,
+          pending_suggestion_author: nameStr,
+          pending_suggestion_phone: objectionPhone.trim(),
           updated_at: Date.now(),
           status: 'pending_review' as any
         };
@@ -823,13 +828,37 @@ const ValidationPage = () => {
                 </div>
                 
                 <div className="p-6">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Qual alteração você propõe?</label>
-                  <textarea 
-                    value={simpleObjectionText}
-                    onChange={e => setSimpleObjectionText(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:border-amber-500 min-h-[120px]"
-                    placeholder="Ex: O prazo deveria ser dia 20, e não dia 15..."
-                  ></textarea>
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Qual alteração você propõe?</label>
+                    <textarea 
+                      value={simpleObjectionText}
+                      onChange={e => setSimpleObjectionText(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:border-amber-500 min-h-[120px]"
+                      placeholder="Ex: O prazo deveria ser dia 20, e não dia 15..."
+                    ></textarea>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Seu Nome</label>
+                      <input 
+                        type="text"
+                        value={objectionName}
+                        onChange={e => setObjectionName(e.target.value)}
+                        placeholder="Parte 2"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Seu WhatsApp</label>
+                      <input 
+                        type="text"
+                        value={objectionPhone}
+                        onChange={e => setObjectionPhone(e.target.value)}
+                        placeholder="(11) 99999-9999"
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0 z-10">
