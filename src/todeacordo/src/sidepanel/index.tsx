@@ -59,6 +59,7 @@ const SidePanel = () => {
   const [meetingState, setMeetingState] = useState<'INACTIVE' | 'LOBBY' | 'ACTIVE' | 'UNKNOWN'>('UNKNOWN');
   const [captionsEnabled, setCaptionsEnabled] = useState<boolean>(false);
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [meetLanguage, setMeetLanguage] = useState<string>('');
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [liveDraft, setLiveDraft] = useState<LiveCaptionDraft | null>(null);
   // Debug & Probe
@@ -227,6 +228,7 @@ const SidePanel = () => {
             setMeetingState(response.meetingState);
             setCaptionsEnabled(response.captionsEnabled);
             setIsCapturing(response.mutationObserverActive);
+            setMeetLanguage(response.meetLanguage || '');
             ensureMeeting(response.meetingState, response.meetingId);
           }
         });
@@ -238,6 +240,7 @@ const SidePanel = () => {
         setMeetingState(message.state);
         setCaptionsEnabled(message.captionsEnabled);
         setIsCapturing(message.isCapturing);
+        setMeetLanguage(message.meetLanguage || '');
         ensureMeeting(message.state, message.meetingId);
 
         if (message.state === 'UNKNOWN' || message.state === 'INACTIVE') {
@@ -521,9 +524,16 @@ const SidePanel = () => {
         )}
 
         {meetingState === 'ACTIVE' && captionsEnabled && (
-          <div className="bg-blue-50 border border-blue-100 text-blue-800 p-2.5 rounded-md text-[11px] leading-relaxed shadow-sm">
-            💡 <strong>Legendas do Meet ativas!</strong> Se a transcrição capturar palavras erradas, certifique-se de que o idioma da legenda no Meet está configurado para <strong>Português</strong>.
-          </div>
+          meetLanguage && !meetLanguage.toLowerCase().startsWith('pt') ? (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3 rounded-md text-xs leading-relaxed shadow-sm">
+              ⚠️ <strong>Idioma do Meet: {meetLanguage.toUpperCase()}</strong><br />
+              O ToDeAcordo funciona melhor com legendas em Português. No Meet, clique em <strong>Três pontos &gt; Legendas</strong> e altere o idioma das legendas para <strong>Português (Brasil)</strong>.
+            </div>
+          ) : (
+            <div className="bg-blue-50 border border-blue-100 text-blue-800 p-2.5 rounded-md text-[11px] leading-relaxed shadow-sm">
+              💡 <strong>Legendas do Meet ativas!</strong> Se a transcrição capturar palavras erradas, certifique-se de que o idioma da legenda no Meet está configurado para <strong>Português</strong>.
+            </div>
+          )
         )}
       </div>
 

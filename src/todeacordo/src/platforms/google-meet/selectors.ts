@@ -27,8 +27,18 @@ export const MEET_SELECTORS = {
   CAPTIONS_TOGGLE_BUTTONS: [
     'button[aria-label*="legenda" i]',
     'button[aria-label*="caption" i]',
+    'button[aria-label*="subtít" i]',
+    'button[aria-label*="subtit" i]',
+    'button[aria-label*="sous-tit" i]',
+    'button[aria-label*="untertitel" i]',
+    'button[aria-label*="sottotit" i]',
     'button[data-tooltip*="legenda" i]',
     'button[data-tooltip*="caption" i]',
+    'button[data-tooltip*="subtít" i]',
+    'button[data-tooltip*="subtit" i]',
+    'button[data-tooltip*="sous-tit" i]',
+    'button[data-tooltip*="untertitel" i]',
+    'button[data-tooltip*="sottotit" i]',
     '[jscontroller="r49Sxf"]',
     '[jsname="r49Sxf"]'
   ],

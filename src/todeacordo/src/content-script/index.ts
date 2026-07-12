@@ -214,7 +214,8 @@ const checkMeetingState = () => {
       state: currentState,
       captionsEnabled: captionsEnabled,
       isCapturing: isCapturing,
-      meetingId: meetingId
+      meetingId: meetingId,
+      meetLanguage: document.documentElement.lang || navigator.language || ''
     }).catch(() => {});
   }
 };
@@ -264,6 +265,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender: chrome.runtime.Mess
       mutationObserverActive: isCapturing,
       observedRoot: 'document.body',
       lastMutationAt: captionExtractor ? captionExtractor.lastMutationAt : 0,
+      meetLanguage: document.documentElement.lang || navigator.language || '',
       
       // Telemetria refatorada
       activeDraftText: captionExtractor ? captionExtractor.activeDraftText : '',
