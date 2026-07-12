@@ -74,6 +74,32 @@ const DashboardApp = () => {
   const [orphanMeetings, setOrphanMeetings] = useState<any[]>([]);
   const { canCreateUnderstanding, recordUsage } = useUsage();
 
+  const [showLanguageWarning, setShowLanguageWarning] = useState<boolean>(() => {
+    try {
+      const dismissedAt = localStorage.getItem('todeacordo_lang_warn_dismissed_at');
+      if (!dismissedAt) return true;
+      const dismissedTime = parseInt(dismissedAt, 10);
+      if (isNaN(dismissedTime)) return true;
+      
+      const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - dismissedTime > sevenDaysInMs) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const handleDismissLanguageWarning = () => {
+    try {
+      localStorage.setItem('todeacordo_lang_warn_dismissed_at', Date.now().toString());
+    } catch (e) {
+      console.error(e);
+    }
+    setShowLanguageWarning(false);
+  };
+
   const showToast = (message: string, type: 'success'|'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -549,6 +575,30 @@ const DashboardApp = () => {
             </button>
           </div>
 
+          {showLanguageWarning && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fadeIn">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl shrink-0 mt-0.5">⚠️</span>
+                <div className="text-amber-900">
+                  <p className="font-bold text-sm sm:text-base">Antes de iniciar:</p>
+                  <p className="text-xs sm:text-sm mt-1 text-amber-800 font-medium">
+                    Ative as legendas do Google Meet e selecione Português (Brasil).
+                  </p>
+                  <p className="font-bold text-sm sm:text-base mt-3">No Meet:</p>
+                  <p className="text-xs sm:text-sm mt-1 text-amber-800 leading-relaxed font-medium">
+                    Mais opções <strong>⋮</strong> ➔ <strong>Configurações</strong> ➔ <strong>Legendas</strong> ➔ <strong>Português (Brasil)</strong>.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={handleDismissLanguageWarning}
+                className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-5 py-2.5 rounded-xl transition-all text-xs sm:text-sm shrink-0 border border-amber-600 self-start md:self-center shadow-sm"
+              >
+                Entendi, continuar
+              </button>
+            </div>
+          )}
+
           {/* Recovery Banner for orphan/interrupted sessions */}
           {orphanMeetings.length > 0 && (
             <div className="mb-6 bg-amber-50 border border-amber-300 rounded-2xl p-5">
@@ -607,17 +657,7 @@ const DashboardApp = () => {
             <p className="text-sm text-indigo-900 font-medium"><strong>47 pessoas</strong> já confirmaram entendimentos enviados por você.</p>
           </div>
 
-          {/* Extension Usage Instructions / Language Warning Banner */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 flex gap-3 items-start shadow-sm">
-            <span className="text-xl">⚠️</span>
-            <div className="text-xs sm:text-sm text-amber-900">
-              <p className="font-bold">Atenção ao usar a extensão no Google Meet:</p>
-              <p className="mt-1 text-amber-800 leading-relaxed">
-                As legendas do Google Meet precisam estar <strong>ativas</strong> e configuradas para o idioma <strong>Português (Brasil)</strong> para que a captura funcione corretamente.
-                Se o seu Meet ou navegador estiver configurado em outro idioma, clique no botão de <strong>Mais opções (Três pontos) &gt; Legendas</strong> no Meet e altere para <strong>Português (Brasil)</strong>.
-              </p>
-            </div>
-          </div>
+
 
           <div className="relative mb-6">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">🔍</span>
