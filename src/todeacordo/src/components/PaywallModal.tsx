@@ -118,9 +118,9 @@ export const PaywallModal = ({ isOpen, onClose, attemptedFeature, sourceMeetingI
             </p>
             
             <div className="bg-white border border-slate-200 rounded-xl py-3 px-4 mb-3">
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Chave Pix (Telefone)</div>
-              <div className="text-base font-black text-indigo-900 select-all font-mono">11 993725876</div>
-              <div className="text-[10px] text-slate-450 mt-1 font-semibold">Nome do Favorecido: Sonia (Equipe de Desenvolvimento)</div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Chave Pix (CPF)</div>
+              <div className="text-base font-black text-indigo-900 select-all font-mono">40130122866</div>
+              <div className="text-[10px] text-slate-450 mt-1 font-semibold">Nome do Favorecido: André (Equipe de Desenvolvimento)</div>
             </div>
             
             <p className="text-[10px] text-indigo-600 font-medium">
