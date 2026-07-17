@@ -100,6 +100,48 @@ const DashboardApp = () => {
     setShowLanguageWarning(false);
   };
 
+  const [userName, setUserName] = useState<string>('Meu Perfil');
+
+  useEffect(() => {
+    const loadUserName = async () => {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['todeacordo_user_name'], (result: any) => {
+          if (result && result.todeacordo_user_name) {
+            setUserName(result.todeacordo_user_name);
+          }
+        });
+      } else {
+        const local = localStorage.getItem('todeacordo_user_name');
+        if (local) {
+          setUserName(local);
+        }
+      }
+    };
+    loadUserName();
+  }, []);
+
+  const handleEditUserName = () => {
+    const newName = prompt('Como você gostaria de ser chamado?', userName === 'Meu Perfil' ? '' : userName);
+    if (newName !== null) {
+      const trimmed = newName.trim();
+      const finalName = trimmed || 'Meu Perfil';
+      setUserName(finalName);
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ todeacordo_user_name: finalName });
+      } else {
+        localStorage.setItem('todeacordo_user_name', finalName);
+      }
+    }
+  };
+
+  const getUserInitials = (name: string) => {
+    if (name === 'Meu Perfil') return 'MP';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0) return 'U';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + (parts[parts.length - 1][0] || '')).toUpperCase();
+  };
+
   const showToast = (message: string, type: 'success'|'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -565,13 +607,14 @@ const DashboardApp = () => {
           </div>
         )}
 
-        <div className="p-6 md:p-10 max-w-5xl mx-auto w-full">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <h2 className="text-2xl font-black text-slate-900 mb-1 flex items-center gap-3">
+        <div className="p-4 md:p-10 max-w-5xl mx-auto w-full">
+          <div className="flex flex-row justify-between items-center mb-6 md:mb-8 gap-4">
+            <h2 className="text-lg md:text-2xl font-black text-slate-900 mb-0 flex items-center gap-2 md:gap-3">
               Meus entendimentos
             </h2>
-            <button onClick={() => setCreationModalOpen(true)} className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-black px-10 py-5 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all whitespace-nowrap text-xl flex items-center gap-3 border border-amber-300">
-              + Criar entendimento
+            <button onClick={() => setCreationModalOpen(true)} className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-black px-4 py-2 md:px-10 md:py-5 rounded-lg md:rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all whitespace-nowrap text-sm md:text-xl flex items-center gap-2 md:gap-3 border border-amber-300">
+              <span className="md:hidden">+ Criar</span>
+              <span className="hidden md:inline">+ Criar entendimento</span>
             </button>
           </div>
 
@@ -651,72 +694,99 @@ const DashboardApp = () => {
             </div>
           )}
 
-          {/* Social / Network Effect Indicator */}
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">📈</div>
-            <p className="text-sm text-indigo-900 font-medium"><strong>47 pessoas</strong> já confirmaram entendimentos enviados por você.</p>
-          </div>
+          {/* Estatísticas dinâmicas */}
+          {(() => {
+            const allDisplayMeetings = meetings.length > 0 ? meetings : DEMO_MEETINGS;
+            const confirmedCount = allDisplayMeetings.filter((m: any) => (m.consensusStatus || 'Pendente') === 'Confirmado').length;
+            const pendingCount = allDisplayMeetings.filter((m: any) => (m.consensusStatus || 'Pendente') === 'Pendente').length;
+            const reservationsCount = allDisplayMeetings.filter((m: any) => (m.consensusStatus || 'Pendente') === 'Com ressalvas').length;
+            const totalCount = allDisplayMeetings.length;
+            const clarityPct = totalCount > 0 ? Math.round((confirmedCount / totalCount) * 100) : 0;
+            const clarityColor = clarityPct >= 80 ? 'text-green-600' : clarityPct >= 50 ? 'text-amber-500' : 'text-red-500';
+            return (
+              <>
+                {/* Social / Network Effect Indicator */}
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">📈</div>
+                  <p className="text-sm text-indigo-900 font-medium"><strong>{confirmedCount} {confirmedCount === 1 ? 'entendimento confirmado' : 'entendimentos confirmados'}</strong> na sua base.</p>
+                </div>
 
+                <div className="relative mb-6">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">🔍</span>
+                  <input 
+                    type="text" 
+                    placeholder="Buscar entendimento por título..." 
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl py-4 pl-12 pr-4 text-base focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-sm"
+                  />
+                </div>
 
-
-          <div className="relative mb-6">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">🔍</span>
-            <input 
-              type="text" 
-              placeholder="O que você procura?" 
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-slate-300 rounded-xl py-4 pl-12 pr-4 text-base focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-sm"
-            />
-          </div>
-
-          {/* Assinatura do Produto (Indicador Central) */}
-          <div className="bg-white rounded-2xl p-6 mb-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex-1">
-              <h2 className="text-lg md:text-xl font-bold text-slate-900 mb-1">Entendimentos recentes</h2>
-              <p className="text-slate-500 text-sm">Resumo da sua base de alinhamentos.</p>
-            </div>
-            <div className="flex gap-6 items-center">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700"><span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> 12 Confirmados</div>
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700"><span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span> 2 Pendentes</div>
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700"><span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> 1 Com ressalvas</div>
-              </div>
-              <div className="w-px h-16 bg-slate-200"></div>
-              <div className="text-center pr-4">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Clareza média</div>
-                <div className="text-3xl font-black text-green-600">97%</div>
-              </div>
-            </div>
-          </div>
+                {/* Assinatura do Produto (Indicador Central) */}
+                <div className="bg-white rounded-2xl p-6 mb-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <h2 className="text-lg md:text-xl font-bold text-slate-900 mb-1">Entendimentos recentes</h2>
+                    <p className="text-slate-500 text-sm">Resumo da sua base de alinhamentos.</p>
+                  </div>
+                  <div className="flex gap-6 items-center">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-700"><span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> {confirmedCount} {confirmedCount === 1 ? 'Confirmado' : 'Confirmados'}</div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-700"><span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span> {pendingCount} {pendingCount === 1 ? 'Pendente' : 'Pendentes'}</div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-700"><span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> {reservationsCount} Com ressalvas</div>
+                    </div>
+                    <div className="w-px h-16 bg-slate-200"></div>
+                    <div className="text-center pr-4">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Clareza média</div>
+                      <div className={`text-3xl font-black ${clarityColor}`}>{clarityPct}%</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
 
           {/* Seção Copiloto IA removida no MVP */}
 
-          {meetings.length === 0 ? (
-            <div className="mb-8">
-              <div className="bg-white border border-slate-200 rounded-2xl p-8 mb-10 text-center shadow-sm max-w-2xl mx-auto">
-                <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">🤝</div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">Toda conversa importante merece terminar com um entendimento compartilhado.</h3>
-                <p className="text-slate-500 text-sm mb-8">Cole uma conversa, importe do Google Meet ou comece escrevendo.</p>
-                <div className="flex justify-center flex-wrap gap-3">
-                  <button onClick={handleCreateAction} className="bg-slate-900 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm hover:bg-slate-800 transition-colors text-sm">Colar conversa</button>
-                  <button onClick={openGoogleMeet} className="bg-white border border-slate-300 text-slate-700 font-bold px-6 py-2.5 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm">Usar no Meet</button>
+          {(() => {
+            const query = searchQuery.trim().toLowerCase();
+            const filterByQuery = (m: any) => !query || (m.title || '').toLowerCase().includes(query);
+
+            if (meetings.length === 0) {
+              const filteredDemo = DEMO_MEETINGS.filter(filterByQuery);
+              return (
+                <div className="mb-8">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-8 mb-10 text-center shadow-sm max-w-2xl mx-auto">
+                    <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">🤝</div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-3">Toda conversa importante merece terminar com um entendimento compartilhado.</h3>
+                    <p className="text-slate-500 text-sm mb-8">Cole uma conversa, importe do Google Meet ou comece escrevendo.</p>
+                    <div className="flex justify-center flex-wrap gap-3">
+                      <button onClick={handleCreateAction} className="bg-slate-900 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm hover:bg-slate-800 transition-colors text-sm">Colar conversa</button>
+                      <button onClick={openGoogleMeet} className="bg-white border border-slate-300 text-slate-700 font-bold px-6 py-2.5 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm">Usar no Meet</button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 mb-4 px-2">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Exemplos para testar</h3>
+                    <span className="text-xs text-slate-500">Experimente o fluxo completo antes de usar uma conversa real.</span>
+                  </div>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    {filteredDemo.length > 0 ? filteredDemo.map(m => renderMeetingRow(m, true)) : (
+                      <div className="p-6 text-center text-slate-400 text-sm">Nenhum exemplo encontrado para "{searchQuery}".</div>
+                    )}
+                  </div>
                 </div>
+              );
+            }
+
+            const filteredMeetings = meetings.filter(filterByQuery);
+            return (
+              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-16">
+                {filteredMeetings.length > 0 ? filteredMeetings.map(m => renderMeetingRow(m, false)) : (
+                  <div className="p-6 text-center text-slate-400 text-sm">Nenhum entendimento encontrado para "{searchQuery}".</div>
+                )}
               </div>
-              
-              <div className="flex items-center gap-3 mb-4 px-2">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Exemplos para testar</h3>
-                <span className="text-xs text-slate-500">Experimente o fluxo completo antes de usar uma conversa real.</span>
-              </div>
-              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                {DEMO_MEETINGS.map(m => renderMeetingRow(m, true))}
-              </div>
-            </div>
-          ) : (
-            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-16">
-              {meetings.map(m => renderMeetingRow(m, false))}
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     );
@@ -777,26 +847,26 @@ const DashboardApp = () => {
   if (loading) return <div className="flex h-screen items-center justify-center">Carregando painel...</div>;
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
-      <aside className="w-[220px] bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 h-full text-slate-300">
-        <div className="p-4 flex items-center gap-3">
-          <div className="w-7 h-7 bg-amber-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-base shadow-sm">
+    <div className="flex flex-col md:flex-row h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
+      <aside className="w-full md:w-[220px] bg-slate-900 border-b md:border-r md:border-b-0 border-slate-800 flex flex-row md:flex-col shrink-0 md:h-full text-slate-300">
+        <div className="p-4 flex items-center gap-3 shrink-0 border-r border-slate-800 md:border-r-0">
+          <div className="w-7 h-7 bg-amber-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-base shadow-sm shrink-0">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
           </div>
-          <h1 className="text-lg font-black text-white tracking-tight">ToDeAcordo</h1>
+          <h1 className="hidden md:block text-lg font-black text-white tracking-tight">ToDeAcordo</h1>
         </div>
 
-        <div className="flex-1 overflow-y-auto flex flex-col scrollbar-hide">
-          <nav className="px-3 py-2 space-y-1 text-sm font-medium">
-            <button onClick={() => setCurrentTab('meetings')} className={`w-full flex items-center gap-3 text-left px-3 py-2 rounded-lg transition-colors ${currentTab === 'meetings' ? 'bg-amber-400/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-              <span className="opacity-70">📄</span> Meus entendimentos
+        <div className="flex-1 overflow-x-auto md:overflow-y-auto flex flex-row md:flex-col scrollbar-hide">
+          <nav className="px-3 py-2 flex flex-row md:flex-col gap-2 md:gap-0 items-center md:items-stretch md:space-y-1 text-sm font-medium">
+            <button onClick={() => setCurrentTab('meetings')} className={`whitespace-nowrap flex items-center gap-2 md:gap-3 text-left px-3 py-2 rounded-lg transition-colors ${currentTab === 'meetings' ? 'bg-amber-400/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+              <span className="opacity-70">📄</span> <span className="hidden sm:inline">Meus entendimentos</span><span className="sm:hidden">Entendimentos</span>
             </button>
             
-            <button onClick={() => setCreationModalOpen(true)} className="w-full flex items-center gap-3 text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors mt-2">
-              <span className="opacity-70">➕</span> Novo entendimento
+            <button onClick={() => setCreationModalOpen(true)} className="whitespace-nowrap flex items-center gap-2 md:gap-3 text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors md:mt-2">
+              <span className="opacity-70">➕</span> <span className="hidden sm:inline">Novo entendimento</span><span className="sm:hidden">Novo</span>
             </button>
             
-            <button onClick={() => setCurrentTab('privacy')} className={`w-full flex items-center gap-3 text-left px-3 py-2 rounded-lg transition-colors ${currentTab === 'privacy' ? 'bg-amber-400/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+            <button onClick={() => setCurrentTab('privacy')} className={`whitespace-nowrap flex items-center gap-2 md:gap-3 text-left px-3 py-2 rounded-lg transition-colors ${currentTab === 'privacy' ? 'bg-amber-400/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
               <span className="opacity-70">🔒</span> Privacidade
             </button>
 
@@ -805,21 +875,25 @@ const DashboardApp = () => {
                 setAttemptedFeature('Apoio Voluntário');
                 setPaywallOpen(true);
               }}
-              className="w-full flex items-center gap-3 text-left px-3 py-2 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors mt-4 border border-amber-400/20 bg-amber-450/5 text-xs font-bold"
+              className="whitespace-nowrap flex items-center gap-2 md:gap-3 text-left px-3 py-2 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors md:mt-4 border border-amber-400/20 bg-amber-450/5 text-xs font-bold"
             >
-              <span>⚡</span> Apoiar / Virar Pro
+              <span>⚡</span> <span className="hidden sm:inline">Apoiar / Virar Pro</span><span className="sm:hidden">Virar Pro</span>
             </button>
           </nav>
 
-          <div className="mt-auto pb-4">
+          <div className="mt-auto pb-4 hidden md:block">
             {/* Upgrade/Plano usage hidden for MVP */}
 
-            <div className="px-4 py-2 border-t border-slate-800/50 mt-2 flex items-center gap-3 hover:bg-slate-800 cursor-pointer transition-colors mx-2 rounded-lg">
+            <div 
+              onClick={handleEditUserName}
+              title="Clique para alterar seu nome"
+              className="px-4 py-2 border-t border-slate-800/50 mt-2 flex items-center gap-3 hover:bg-slate-800 cursor-pointer transition-colors mx-2 rounded-lg"
+            >
               <div className="w-6 h-6 rounded bg-slate-700 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-                AF
+                {getUserInitials(userName)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-white truncate">Alexandre Florio</p>
+                <p className="text-xs font-bold text-white truncate">{userName}</p>
               </div>
             </div>
           </div>
