@@ -3,7 +3,7 @@ import { getConsensusForMeeting, saveConsensus } from '../storage/consensusStora
 import type { ConsensusObject, TranscriptSegment } from '../types';
 import { getTranscriptForMeeting } from '../storage/transcriptStorage';
 import { generateConsensusFromTranscript } from '../ai/consensusExtractor';
-import { getMeeting } from '../storage/meetingStorage';
+import { getMeeting, saveMeeting } from '../storage/meetingStorage';
 
 // Detect if running inside Chrome Extension or on web
 const isExtensionContext = () => window.location.protocol === 'chrome-extension:';
@@ -27,6 +27,7 @@ export const MeetingDetailsPage = () => {
   const autoGenerateRef = useRef(false);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
   const [editSummary, setEditSummary] = useState('');
   const [editAgreements, setEditAgreements] = useState<string[]>([]);
   const [editDecisions, setEditDecisions] = useState<string[]>([]);
@@ -36,6 +37,7 @@ export const MeetingDetailsPage = () => {
   const autoEditTriggered = useRef(false);
 
   const startEditing = () => {
+    setEditTitle(meeting?.title || consensus?.title || '');
     setEditSummary(consensus?.summary || '');
     setEditAgreements((consensus?.agreements || []).map(a => typeof a === 'string' ? a : a.text));
     setEditDecisions((consensus?.decisions || []).map(a => typeof a === 'string' ? a : a.text));
@@ -58,6 +60,7 @@ export const MeetingDetailsPage = () => {
     };
     const updatedConsensus = {
       ...consensus,
+      title: editTitle,
       summary: editSummary,
       agreements: editAgreements.filter(a => a.trim() !== '').map(text => ({ text })),
       decisions: editDecisions.filter(d => d.trim() !== '').map(text => ({ text })),
@@ -74,6 +77,14 @@ export const MeetingDetailsPage = () => {
     try {
       await saveConsensus(updatedConsensus);
       setConsensus(updatedConsensus);
+
+      const mData = await getMeeting(currentMeetingId);
+      if (mData) {
+        mData.title = editTitle;
+        await saveMeeting(mData);
+        setMeeting(mData);
+      }
+
       setIsEditing(false);
       alert('Nova versão salva com sucesso!');
     } catch (e) {
@@ -138,9 +149,9 @@ export const MeetingDetailsPage = () => {
         setTranscript(cData.transcript_segments);
       }
 
-      // Consider consensus "real" only if it has actual decisions or obligations
-      const hasContent = (cData?.decisions?.length ?? 0) > 0 || (cData?.obligations?.length ?? 0) > 0;
-      return hasContent;
+      // Consider consensus "real" if we loaded a record from Supabase
+      const hasRealConsensus = !!cData;
+      return hasRealConsensus;
     } catch (e) {
       console.error(e);
       return false;
@@ -160,7 +171,15 @@ export const MeetingDetailsPage = () => {
       setIsGenerating(true);
       setActiveTab('acordos');
       try {
-          const tData = await getTranscriptForMeeting(id);
+          let tData = await getTranscriptForMeeting(id);
+          if (!tData || tData.length === 0) {
+              // Fallback to state transcript or consensus segments if IndexedDB is empty (thin client dashboard view)
+              if (transcript && transcript.length > 0) {
+                  tData = transcript;
+              } else if (consensus?.transcript_segments && consensus.transcript_segments.length > 0) {
+                  tData = consensus.transcript_segments;
+              }
+          }
           if (!tData || tData.length === 0) {
               throw new Error('Nenhuma transcrição foi encontrada para esta reunião.');
           }
@@ -186,6 +205,13 @@ export const MeetingDetailsPage = () => {
 
           await saveConsensus(finalResult);
           console.log('BUG007 ETAPA 4 SALVO');
+
+          const mData = await getMeeting(id);
+          if (mData) {
+            mData.title = finalResult.title || mData.title;
+            await saveMeeting(mData);
+            setMeeting(mData);
+          }
 
           setConsensus(finalResult);
           console.log('BUG007 ETAPA 5 ESTADO ATUALIZADO');
@@ -339,7 +365,7 @@ export const MeetingDetailsPage = () => {
                   </div>
                   {(() => {
                     const hasContent = (consensus?.decisions?.length ?? 0) > 0 || (consensus?.obligations?.length ?? 0) > 0;
-                    if (!hasContent) {
+                    if (!hasContent && !isEditing) {
                       return (
                         <div className="text-center py-12">
                           {generationError && (
@@ -387,6 +413,11 @@ export const MeetingDetailsPage = () => {
                               </div>
                             </div>
                           )}
+                          <div className="mb-6">
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Título do Entendimento</h3>
+                            <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                          </div>
+
                           <div className="mb-6">
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Resumo</h3>
                             <textarea value={editSummary} onChange={e => setEditSummary(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm min-h-[100px]" />
