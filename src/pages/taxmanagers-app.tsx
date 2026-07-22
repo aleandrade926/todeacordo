@@ -31,7 +31,6 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { OpportunityModule } from "../components/taxmanagers/OpportunityModule";
 
 // Flag de módulo — FORA do componente React, persiste entre re-renders e StrictMode.
 // Garante que apenas UM processo de gravação ocorra por abertura do popup de importação.
@@ -492,7 +491,6 @@ export default function TaxManagersApp() {
   const [frutaBaixaLeads, setFrutaBaixaLeads] = useState<any[]>([]);
   const [frutaBaixaLoading, setFrutaBaixaLoading] = useState(false);
   const [frutaBaixaError, setFrutaBaixaError] = useState("");
-  const [frutaBaixaSubTab, setFrutaBaixaSubTab] = useState<"fila_padrao" | "oportunidade">("fila_padrao");
   const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
   const [expandedMessageLeadId, setExpandedMessageLeadId] = useState<string | null>(null);
 
@@ -3599,31 +3597,7 @@ ${fonteDados}`;
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0 flex-wrap items-center">
-                  <div className="flex gap-1 bg-[#111116] p-1 rounded-lg border border-white/10 shrink-0">
-                    <button
-                      onClick={() => setFrutaBaixaSubTab("fila_padrao")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                        frutaBaixaSubTab === "fila_padrao"
-                          ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/40"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      Fila Ranqueada
-                    </button>
-                    <button
-                      onClick={() => setFrutaBaixaSubTab("oportunidade")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                        frutaBaixaSubTab === "oportunidade"
-                          ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/40"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                      Oportunidades
-                    </button>
-                  </div>
-
+                <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => {
                       setAtaque50kMode(!ataque50kMode);
@@ -3647,16 +3621,8 @@ ${fonteDados}`;
                 </div>
               </div>
 
-              {/* Exibição Condicional de Oportunidades ou Fila Padrão */}
-              {frutaBaixaSubTab === "oportunidade" ? (
-                <OpportunityModule
-                  realLeadsSample={frutaBaixaLeads}
-                  onRefreshSample={fetchQuarantineLeads}
-                  isLoading={frutaBaixaLoading}
-                />
-              ) : (
-                /* Tabela de Fruta Baixa */
-                <div className="bg-[#0b0b0f] border border-white/5 rounded-xl overflow-hidden">
+              {/* Tabela de Fruta Baixa */}
+              <div className="bg-[#0b0b0f] border border-white/5 rounded-xl overflow-hidden">
                 {frutaBaixaLoading ? (
                   <div className="text-center py-16 text-slate-400 text-sm">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto mb-4"></div>
@@ -3793,7 +3759,6 @@ ${fonteDados}`;
                   </div>
                 )}
               </div>
-              )}
             </div>
             );
           })()}
