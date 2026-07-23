@@ -3056,15 +3056,13 @@ ${fonteDados}`;
               <DollarSign className="w-4 h-4" />
               <span>Comissões e Splits</span>
             </button>
-            {profile?.is_admin && (
-              <button 
-                onClick={() => setActiveTab("fruta_baixa")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'fruta_baixa' ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
-              >
-                <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
-                <span>Fila Fruta Baixa</span>
-              </button>
-            )}
+            <button 
+              onClick={() => setActiveTab("fruta_baixa")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'fruta_baixa' ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            >
+              <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+              <span>Fila Fruta Baixa</span>
+            </button>
           </div>
 
           {/* Gamificação Widget */}
@@ -3560,7 +3558,7 @@ ${fonteDados}`;
             </div>
           )}
 
-          {activeTab === "fruta_baixa" && profile?.is_admin && (() => {
+          {activeTab === "fruta_baixa" && (() => {
             const isSearchActive = !!debouncedSearch.trim();
             console.log("[FrutaBaixa render]", {
               activeTab,
