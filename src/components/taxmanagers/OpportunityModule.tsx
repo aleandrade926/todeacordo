@@ -13,7 +13,9 @@ import {
   Search,
   Bot,
   AlertCircle,
-  Info
+  Info,
+  Clock,
+  UserX
 } from "lucide-react";
 import {
   evaluateLeadOpportunityMatch,
@@ -21,6 +23,11 @@ import {
   type OpportunityMatchResult,
   type TargetMatchStatus
 } from "../../lib/taxmanagers/opportunity-engine";
+import {
+  getSavedOpportunityGroup,
+  getSavedOpportunityFilter,
+  syncNavigationStateToStorageAndUrl
+} from "../../lib/taxmanagers/navigation-state";
 
 interface OpportunityModuleProps {
   realLeadsSample: LeadInput[];
@@ -33,8 +40,9 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
   onRefreshSample,
   isLoading = false,
 }) => {
-  const [selectedGroup, setSelectedGroup] = useState<TargetMatchStatus>("PRIORIDADE");
-  const [searchTerm, setSearchTerm] = useState("");
+  // Inicialização de estado persistente com fallback seguro (Regra F5)
+  const [selectedGroup, setSelectedGroup] = useState<TargetMatchStatus>(() => getSavedOpportunityGroup());
+  const [searchTerm, setSearchTerm] = useState<string>(() => getSavedOpportunityFilter());
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
   // Mensagens geradas por IA (Vercel API / Groq Real com Fallback Seguro de Contingência)
@@ -42,13 +50,23 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
     Record<string, { initialMessage: string; discoveryQuestion: string; followUp: string; isGenerating?: boolean; isRealAI?: boolean; errorNote?: string }>
   >({});
 
+  const handleSelectGroup = (group: TargetMatchStatus) => {
+    setSelectedGroup(group);
+    syncNavigationStateToStorageAndUrl("fruta_baixa", "oportunidade", group, searchTerm);
+  };
+
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+    syncNavigationStateToStorageAndUrl("fruta_baixa", "oportunidade", selectedGroup, term);
+  };
+
   // 1. Processar a Amostra Real de até 200 Contatos da Fila Fruta Baixa (Somente Leitura)
   const evaluatedMatches = useMemo(() => {
     const sample = realLeadsSample.slice(0, 200);
     return sample.map((lead) => evaluateLeadOpportunityMatch(lead));
   }, [realLeadsSample]);
 
-  // 2. Estatísticas de Resolução dos 4 Níveis na Amostra Real
+  // 2. Estatísticas de Resolução dos 4 Níveis e Recência na Amostra Real
   const resolutionStats = useMemo(() => {
     const stats = {
       confirmed: 0,
@@ -58,6 +76,7 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
       prioridade: 0,
       validar: 0,
       nao_abordar: 0,
+      retiredOrInactive: 0,
     };
 
     evaluatedMatches.forEach((match) => {
@@ -65,6 +84,10 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
       if (match.match_status === "PRIORIDADE") stats.prioridade++;
       else if (match.match_status === "VALIDAR") stats.validar++;
       else stats.nao_abordar++;
+
+      if (match.current_employment_status !== "active") {
+        stats.retiredOrInactive++;
+      }
     });
 
     return stats;
@@ -80,6 +103,8 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
         return (
           m.lead_name.toLowerCase().includes(term) ||
           (m.company_name_snapshot && m.company_name_snapshot.toLowerCase().includes(term)) ||
+          (m.current_company_name && m.current_company_name.toLowerCase().includes(term)) ||
+          (m.previous_company_name && m.previous_company_name.toLowerCase().includes(term)) ||
           (m.lead_cargo && m.lead_cargo.toLowerCase().includes(term))
         );
       })
@@ -92,25 +117,41 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
       });
   }, [evaluatedMatches, selectedGroup, searchTerm]);
 
-  // Conectar com Endpoint Real de IA (/api/personalize_agent) com Tratamento de Erro & Fallback
+  // Conectar com Endpoint Real de IA (/api/personalize_agent) respeitando a Regra de Vínculo Atual (Regras 4 & 9)
   const handleGenerateAICopies = async (match: OpportunityMatchResult) => {
     setAiCopies((prev) => ({
       ...prev,
       [match.lead_id]: { initialMessage: "", discoveryQuestion: "", followUp: "", isGenerating: true },
     }));
 
-    const isUnresolved = match.company_resolution_status !== "confirmed";
-    const companyRef = match.company_name_snapshot ? match.company_name_snapshot : "sua empresa";
+    // Regra 4 & 9: Não gerar mensagem comercial para contatos inativos/aposentados dirigidas à empresa histórica
+    if (match.current_employment_status !== "active" || !match.current_company_name) {
+      const inactiveMsg = `Contato sem vínculo ativo no momento (${match.employment_recency_status.toUpperCase()}). Não abordar como colaborador atual de ${match.previous_company_name || "empresa anterior"}.`;
+      setAiCopies((prev) => ({
+        ...prev,
+        [match.lead_id]: {
+          initialMessage: inactiveMsg,
+          discoveryQuestion: "Validar vínculo profissional atual antes de qualquer contato.",
+          followUp: "Abordagem suspensa para preservar governança comercial.",
+          isGenerating: false,
+          isRealAI: false,
+          errorNote: match.recommended_action
+        },
+      }));
+      return;
+    }
+
+    const companyRef = match.current_company_name;
 
     const payload = {
       lead: {
         id: match.lead_id,
         nome: match.lead_name,
-        cargo: match.lead_cargo || "decisor",
-        empresa: match.company_name_snapshot || "",
+        cargo: match.current_role || match.lead_cargo || "decisor",
+        empresa: companyRef,
         status: match.company_resolution_status
       },
-      context_extra: `Oportunidade: Tax Managers — Diagnóstico Receita Sintonia. Resolução da Empresa: ${match.company_resolution_status}. Dados comprovados: Aderência=${match.opportunity_adherence_score}pts. Dados faltantes: ${match.missing_data.join(", ")}. REGRA RIGOROSA: Não afirme fatos sobre empresa candidate, unresolved ou missing.`
+      context_extra: `Oportunidade: Tax Managers — Diagnóstico Receita Sintonia. Vínculo Atual Confirmado: ${companyRef}. REGRA RIGOROSA: Não afirme fatos sobre empresa anterior ou encerrada.`
     };
 
     try {
@@ -123,13 +164,9 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (data && !data.error && (data.short_note || data.long_email)) {
-          const initialMessage = data.short_note || (isUnresolved
-            ? `Olá ${match.lead_name}, como responsável pela área tributária/financeira, gostaria de apresentar nossa análise de oportunidade no Diagnóstico Receita Sintonia focado em eficiência fiscal.`
-            : `Olá ${match.lead_name}, identificamos na ${companyRef} potenciais pontos de otimização no Diagnóstico Receita Sintonia. Terias 10 minutos esta semana para avaliarmos a aderência?`);
-
-          const discoveryQuestion = data.article_pitch || `No cenário atual da ${companyRef}, vocês já possuem processo automatizado para auditoria de créditos de ICMS e PIS/COFINS pelo Receita Sintonia?`;
-
-          const followUp = data.long_email || `Olá ${match.lead_name}, passando para checar se teve oportunidade de avaliar a mensagem anterior sobre o Diagnóstico Receita Sintonia. Ficamos à disposição para um breve alinhamento técnico.`;
+          const initialMessage = data.short_note || `Olá ${match.lead_name}, identificamos na ${companyRef} potenciais pontos de otimização no Diagnóstico Receita Sintonia. Terias 10 minutos esta semana para avaliarmos a aderência?`;
+          const discoveryQuestion = data.article_pitch || `No cenário atual da ${companyRef}, vocês já possuem processo automatizado para auditoria de créditos tributários corporativos?`;
+          const followUp = data.long_email || `Olá ${match.lead_name}, passando para checar se teve oportunidade de avaliar a mensagem anterior sobre o Diagnóstico Receita Sintonia na ${companyRef}.`;
 
           setAiCopies((prev) => ({
             ...prev,
@@ -149,14 +186,10 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
       console.warn("[OpportunityModule AI Endpoint fallback]:", err?.message || err);
     }
 
-    // Fallback seguro (Sugestão Local de Contingência)
-    const initialMessage = isUnresolved
-      ? `Olá ${match.lead_name}, como responsável pela área tributária/financeira, gostaria de apresentar nossa análise de oportunidade no Diagnóstico Receita Sintonia focado em eficiência fiscal.`
-      : `Olá ${match.lead_name}, identificamos na ${companyRef} potenciais pontos de otimização no Diagnóstico Receita Sintonia. Terias 10 minutos esta semana para avaliarmos a aderência?`;
-
-    const discoveryQuestion = `No cenário atual da ${companyRef}, vocês já possuem processo automatizado para auditoria de créditos de ICMS e PIS/COFINS pelo Receita Sintonia?`;
-
-    const followUp = `Olá ${match.lead_name}, passando para checar se teve oportunidade de avaliar a mensagem anterior sobre o Diagnóstico Receita Sintonia. Ficamos à disposição para um breve alinhamento técnico.`;
+    // Fallback seguro de contingência
+    const initialMessage = `Olá ${match.lead_name}, identificamos na ${companyRef} potenciais pontos de otimização no Diagnóstico Receita Sintonia. Terias 10 minutos esta semana para avaliarmos a aderência?`;
+    const discoveryQuestion = `No cenário atual da ${companyRef}, vocês já possuem processo automatizado para auditoria de créditos tributários corporativos?`;
+    const followUp = `Olá ${match.lead_name}, passando para checar se teve oportunidade de avaliar a mensagem anterior sobre o Diagnóstico Receita Sintonia na ${companyRef}.`;
 
     setAiCopies((prev) => ({
       ...prev,
@@ -200,7 +233,7 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
             </h3>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl">
               Identificação determinística de empresas e contatos prioritários com aderência tributária corporativa.
-              Priorização baseada no Opportunity Adherence Score e autoridade do contato (Curva ABC).
+              Filtragem rigorosa de vínculos profissionais ativos, separando contatos aposentados, em transição ou com vínculos encerrados.
             </p>
           </div>
 
@@ -218,7 +251,7 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
           </div>
         </div>
 
-        {/* Resumo de Resolução dos 4 Cenários na Amostra Real */}
+        {/* Resumo de Resolução na Amostra Real */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/5">
           <div className="bg-[#111116] border border-emerald-500/20 p-2.5 rounded-lg">
             <div className="flex items-center justify-between">
@@ -249,11 +282,11 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
 
           <div className="bg-[#111116] border border-rose-500/20 p-2.5 rounded-lg">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-400 font-medium">Empresa Ausente</span>
-              <HelpCircle className="w-4 h-4 text-slate-400" />
+              <span className="text-[11px] text-slate-400 font-medium">Vínculos Inativos/Históricos</span>
+              <UserX className="w-4 h-4 text-rose-400" />
             </div>
-            <p className="text-lg font-bold text-slate-300 mt-1">{resolutionStats.missing}</p>
-            <span className="text-[10px] text-slate-500">sem informação</span>
+            <p className="text-lg font-bold text-rose-400 mt-1">{resolutionStats.retiredOrInactive}</p>
+            <span className="text-[10px] text-slate-500">aposentados / histórico</span>
           </div>
         </div>
       </div>
@@ -262,7 +295,7 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-[#0b0b0f] border border-white/10 p-2 rounded-xl">
         <div className="flex gap-1.5 overflow-x-auto">
           <button
-            onClick={() => setSelectedGroup("PRIORIDADE")}
+            onClick={() => handleSelectGroup("PRIORIDADE")}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
               selectedGroup === "PRIORIDADE"
                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
@@ -274,7 +307,7 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
           </button>
 
           <button
-            onClick={() => setSelectedGroup("VALIDAR")}
+            onClick={() => handleSelectGroup("VALIDAR")}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
               selectedGroup === "VALIDAR"
                 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
@@ -286,7 +319,7 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
           </button>
 
           <button
-            onClick={() => setSelectedGroup("NÃO ABORDAR")}
+            onClick={() => handleSelectGroup("NÃO ABORDAR")}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
               selectedGroup === "NÃO ABORDAR"
                 ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
@@ -305,7 +338,7 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
             type="text"
             placeholder="Filtrar por nome, empresa ou cargo..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full bg-[#111116] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
           />
         </div>
@@ -341,21 +374,34 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
                       <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="text-sm font-bold text-white">{match.lead_name}</h4>
 
-                        {/* Badge de Empresa e Status de Resolução */}
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                            match.company_resolution_status === "confirmed"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                              : match.company_resolution_status === "candidate"
-                              ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                              : match.company_resolution_status === "unresolved"
-                              ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                              : "bg-slate-500/10 text-slate-400 border-slate-500/30"
-                          }`}
-                        >
-                          Empresa: {match.company_name_snapshot || "Não informada"} (
-                          {match.company_resolution_status.toUpperCase()})
-                        </span>
+                        {/* Status de Recência do Vínculo */}
+                        {match.employment_recency_status === "retired" ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                            <UserX className="w-3 h-3 text-rose-400" /> Aposentado
+                          </span>
+                        ) : match.employment_recency_status === "career_break" ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-rose-400" /> Pausa na Carreira
+                          </span>
+                        ) : match.employment_recency_status === "unemployed" ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                            <UserX className="w-3 h-3 text-rose-400" /> Desempregado
+                          </span>
+                        ) : match.employment_recency_status === "historical" ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-amber-400" /> Vínculo Histórico Encerrado
+                          </span>
+                        ) : (
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                              match.company_resolution_status === "confirmed"
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                                : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                            }`}
+                          >
+                            Empresa Atual: {match.current_company_name || match.company_name_snapshot || "Não confirmada"}
+                          </span>
+                        )}
 
                         {/* Badge Curva ABC */}
                         <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
@@ -364,8 +410,12 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
                       </div>
 
                       <p className="text-xs text-slate-400 mt-1">
-                        Cargo: <strong className="text-slate-200">{match.lead_cargo || "Não informado"}</strong> | Origem Resolução:{" "}
-                        <code className="text-[11px] text-cyan-300 font-mono">{match.company_resolution_source}</code>
+                        Cargo Atual: <strong className="text-slate-200">{match.current_role || match.lead_cargo || "Não informado"}</strong>
+                        {match.previous_company_name && (
+                          <span className="text-slate-400 ml-2">
+                            | Empresa Anterior: <strong className="text-amber-300/90">{match.previous_company_name}</strong> (Término: {match.previous_role_ended_at || "histórico"})
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -411,6 +461,21 @@ export const OpportunityModule: React.FC<OpportunityModuleProps> = ({
                         <Sparkles className="w-3.5 h-3.5" /> Próxima Ação Comercial Recomendada
                       </span>
                       <p className="text-xs text-slate-200 font-medium mt-1">{match.recommended_action}</p>
+                    </div>
+
+                    {/* Detalhamento dos 8 Campos de Recência do Vínculo */}
+                    <div className="bg-[#111116] border border-white/5 p-3 rounded-lg text-xs space-y-1 font-mono">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase font-sans mb-1">
+                        Dossiê de Recência do Vínculo Profissional (Regras 5 & 6)
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300">
+                        <div>current_company_name: <span className="text-cyan-300">{match.current_company_name || "null"}</span></div>
+                        <div>current_role: <span className="text-cyan-300">{match.current_role || "null"}</span></div>
+                        <div>current_employment_status: <span className="text-amber-300">{match.current_employment_status}</span></div>
+                        <div>employment_recency_status: <span className="text-emerald-300 font-bold">{match.employment_recency_status}</span></div>
+                        <div>previous_company_name: <span className="text-slate-400">{match.previous_company_name || "null"}</span></div>
+                        <div>previous_role_ended_at: <span className="text-slate-400">{match.previous_role_ended_at || "null"}</span></div>
+                      </div>
                     </div>
 
                     {/* Justificativas da Pontuação e Dados Faltantes */}

@@ -32,6 +32,11 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { OpportunityModule } from "../components/taxmanagers/OpportunityModule";
+import {
+  getSavedActiveTab,
+  getSavedFrutaBaixaSubTab,
+  syncNavigationStateToStorageAndUrl
+} from "../lib/taxmanagers/navigation-state";
 
 // Flag de módulo — FORA do componente React, persiste entre re-renders e StrictMode.
 // Garante que apenas UM processo de gravação ocorra por abertura do popup de importação.
@@ -429,8 +434,19 @@ export default function TaxManagersApp() {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>("");
   const [appLoading, setAppLoading] = useState(true);
 
-  // Tabs e Navegação
-  const [activeTab, setActiveTab] = useState<"hoje" | "dashboard" | "leads" | "comissoes" | "config" | "fruta_baixa">("hoje");
+  // Tabs e Navegação (Preservação de Estado F5)
+  const [activeTab, setActiveTab] = useState<"hoje" | "dashboard" | "leads" | "comissoes" | "config" | "fruta_baixa">(() => getSavedActiveTab());
+  const [frutaBaixaSubTab, setFrutaBaixaSubTab] = useState<"fila_padrao" | "oportunidade">(() => getSavedFrutaBaixaSubTab());
+
+  const handleTabChange = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    syncNavigationStateToStorageAndUrl(tab, tab === "fruta_baixa" ? frutaBaixaSubTab : undefined);
+  };
+
+  const handleFrutaBaixaSubTabChange = (sub: typeof frutaBaixaSubTab) => {
+    setFrutaBaixaSubTab(sub);
+    syncNavigationStateToStorageAndUrl("fruta_baixa", sub);
+  };
 
   // Dados do CRM
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -494,7 +510,6 @@ export default function TaxManagersApp() {
   const [frutaBaixaError, setFrutaBaixaError] = useState("");
   const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
   const [expandedMessageLeadId, setExpandedMessageLeadId] = useState<string | null>(null);
-  const [frutaBaixaSubTab, setFrutaBaixaSubTab] = useState<"fila_padrao" | "oportunidade">("fila_padrao");
 
   // Helper defensivo para strings — nunca crashar com .toLowerCase() em null/undefined
   const safeText = (value: unknown) => String(value || "").toLowerCase();
@@ -3029,35 +3044,35 @@ ${fonteDados}`;
         <aside className="w-full md:w-64 flex-shrink-0 flex flex-col gap-6">
           <div className="bg-[#0b0b0f] border border-white/5 rounded-xl p-4 flex flex-col gap-1">
             <button 
-              onClick={() => setActiveTab("hoje")}
+              onClick={() => handleTabChange("hoje")}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'hoje' ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
             >
               <Calendar className="w-4 h-4 text-cyan-400" />
               <span>Operação Hoje</span>
             </button>
             <button 
-              onClick={() => setActiveTab("dashboard")}
+              onClick={() => handleTabChange("dashboard")}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'dashboard' ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
             >
               <TrendingUp className="w-4 h-4" />
               <span>Visão Geral</span>
             </button>
             <button 
-              onClick={() => setActiveTab("leads")}
+              onClick={() => handleTabChange("leads")}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'leads' ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
             >
               <Users className="w-4 h-4" />
               <span>Gestão de Leads</span>
             </button>
             <button 
-              onClick={() => setActiveTab("comissoes")}
+              onClick={() => handleTabChange("comissoes")}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'comissoes' ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
             >
               <DollarSign className="w-4 h-4" />
               <span>Comissões e Splits</span>
             </button>
             <button 
-              onClick={() => setActiveTab("fruta_baixa")}
+              onClick={() => handleTabChange("fruta_baixa")}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'fruta_baixa' ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
             >
               <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
@@ -3600,7 +3615,7 @@ ${fonteDados}`;
                 <div className="flex gap-2 shrink-0 flex-wrap items-center">
                   <div className="flex gap-1 bg-[#111116] p-1 rounded-lg border border-white/10 shrink-0">
                     <button
-                      onClick={() => setFrutaBaixaSubTab("fila_padrao")}
+                      onClick={() => handleFrutaBaixaSubTabChange("fila_padrao")}
                       className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
                         frutaBaixaSubTab === "fila_padrao"
                           ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/40"
@@ -3610,7 +3625,7 @@ ${fonteDados}`;
                       Fila Ranqueada
                     </button>
                     <button
-                      onClick={() => setFrutaBaixaSubTab("oportunidade")}
+                      onClick={() => handleFrutaBaixaSubTabChange("oportunidade")}
                       className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                         frutaBaixaSubTab === "oportunidade"
                           ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/40"

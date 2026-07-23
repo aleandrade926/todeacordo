@@ -1,3 +1,11 @@
+import {
+  resolveEmploymentDetails,
+  isInvalidCompanyName,
+  type EmploymentResolutionOutcome,
+  type EmploymentRecencyStatus,
+  type CurrentEmploymentStatus
+} from "./company-resolution";
+
 export type CompanyResolutionSource = "company_id" | "candidate_company_id" | "legacy_text" | "missing";
 export type CompanyResolutionStatus = "confirmed" | "candidate" | "unresolved" | "missing";
 export type TargetMatchStatus = "PRIORIDADE" | "VALIDAR" | "NÃO ABORDAR";
@@ -58,15 +66,40 @@ export interface OpportunityMatchResult {
   next_contact_at: string | null;
   notes: string | null;
   parceiro_id?: string | null;
+
+  // Derived employment recency fields (Regras 5 e 6)
+  current_company_name: string | null;
+  current_role: string | null;
+  current_employment_status: CurrentEmploymentStatus;
+  current_role_started_at: string | null;
+  previous_company_name: string | null;
+  previous_role: string | null;
+  previous_role_ended_at: string | null;
+  employment_recency_status: EmploymentRecencyStatus;
 }
 
 /**
- * 1. Resolução em 4 Níveis (Strict Hierarchy)
+ * 1. Resolução em 4 Níveis (Strict Hierarchy) alinhada à atualidade do vínculo
  */
-export function resolveCompanyHierarchy(lead: LeadInput): CompanyResolutionResult {
+export function resolveCompanyHierarchy(
+  lead: LeadInput,
+  empDetails?: EmploymentResolutionOutcome
+): CompanyResolutionResult {
+  const emp = empDetails || resolveEmploymentDetails(lead);
+
+  if (!emp.is_current_link_active) {
+    return {
+      company_id: null,
+      candidate_company_id: null,
+      company_name_snapshot: null,
+      company_resolution_source: "missing",
+      company_resolution_status: "missing",
+    };
+  }
+
   const companyId = lead.company_id?.trim() || null;
   const candidateId = lead.candidate_company_id?.trim() || null;
-  const legacyText = lead.empresa?.trim() || null;
+  const legacyText = emp.current_company_name || lead.empresa?.trim() || null;
 
   if (companyId) {
     return {
@@ -88,7 +121,7 @@ export function resolveCompanyHierarchy(lead: LeadInput): CompanyResolutionResul
     };
   }
 
-  if (legacyText) {
+  if (legacyText && !isInvalidCompanyName(legacyText)) {
     return {
       company_id: null,
       candidate_company_id: null,
@@ -134,7 +167,8 @@ export function classifyContactCurve(cargo?: string | null): ContactCurve {
  */
 export function calculateOpportunityScore(
   lead: LeadInput, 
-  resolution: CompanyResolutionResult
+  resolution: CompanyResolutionResult,
+  employment: EmploymentResolutionOutcome
 ): ScoreDetails {
   let opportunity_adherence_score = 0;
   let relationship_signal = 0;
@@ -146,42 +180,54 @@ export function calculateOpportunityScore(
   const empText = (resolution.company_name_snapshot || "").toLowerCase();
   const metaStr = JSON.stringify(meta).toLowerCase();
 
-  // 1. Porte Médio ou Grande com evidência (+25)
-  const hasPorteEvidence = meta.porte_empresa === "medio" || meta.porte_empresa === "grande" ||
-    metaStr.includes("faturamento_relevante") || metaStr.includes("lucro_real") ||
-    empText.includes("s.a.") || empText.includes("sa") || empText.includes("holding") ||
-    empText.includes("industria") || empText.includes("brasil") || empText.includes("grupo");
+  // Penalidade apenas para vínculos explicitamente inativos (aposentado, pausa, desempregado, histórico)
+  const isExplicitlyEnded =
+    employment.employment_recency_status === "retired" ||
+    employment.employment_recency_status === "career_break" ||
+    employment.employment_recency_status === "unemployed" ||
+    employment.employment_recency_status === "historical";
 
-  if (hasPorteEvidence) {
-    opportunity_adherence_score += 25;
-    score_reasons.push("+25: Porte médio/grande com evidência cadastral ou operacional");
+  if (isExplicitlyEnded) {
+    opportunity_adherence_score -= 30;
+    negative_reasons.push(`-30: ${employment.reason}`);
   } else {
-    missing_data.push("Evidência de Porte/Faturamento ausente");
-  }
+    // 1. Porte Médio ou Grande com evidência (+25)
+    const hasPorteEvidence = meta.porte_empresa === "medio" || meta.porte_empresa === "grande" ||
+      metaStr.includes("faturamento_relevante") || metaStr.includes("lucro_real") ||
+      empText.includes("s.a.") || empText.includes("sa") || empText.includes("holding") ||
+      empText.includes("industria") || empText.includes("brasil") || empText.includes("grupo");
 
-  // 2. Operação tributária relevante (+20)
-  const hasTaxOperationEvidence = meta.operacao_tributaria === "relevante" ||
-    metaStr.includes("icms") || metaStr.includes("pis_cofins") || metaStr.includes("lucro_real") ||
-    empText.includes("distribuidora") || empText.includes("logistica") || empText.includes("usina") ||
-    empText.includes("alimentos") || empText.includes("farmaceutica") || empText.includes("atacado");
+    if (hasPorteEvidence) {
+      opportunity_adherence_score += 25;
+      score_reasons.push("+25: Porte médio/grande com evidência cadastral ou operacional");
+    } else {
+      missing_data.push("Evidência de Porte/Faturamento ausente");
+    }
 
-  if (hasTaxOperationEvidence) {
-    opportunity_adherence_score += 20;
-    score_reasons.push("+20: Operação tributária de alta complexidade (ICMS/PIS/COFINS/Lucro Real)");
-  } else {
-    missing_data.push("Evidência de Operação Tributária ausente");
-  }
+    // 2. Operação tributária relevante (+20)
+    const hasTaxOperationEvidence = meta.operacao_tributaria === "relevante" ||
+      metaStr.includes("icms") || metaStr.includes("pis_cofins") || metaStr.includes("lucro_real") ||
+      empText.includes("distribuidora") || empText.includes("logistica") || empText.includes("usina") ||
+      empText.includes("alimentos") || empText.includes("farmaceutica") || empText.includes("atacado");
 
-  // 3. Sinal público ou histórico de complexidade fiscal (+15)
-  const hasComplexitySignal = meta.complexidade_fiscal === true ||
-    metaStr.includes("sintonia") || metaStr.includes("recuperacao") || metaStr.includes("contencioso") ||
-    Boolean(lead.chat_history && (lead.chat_history.includes("tribut") || lead.chat_history.includes("fiscal") || lead.chat_history.includes("imposto")));
+    if (hasTaxOperationEvidence) {
+      opportunity_adherence_score += 20;
+      score_reasons.push("+20: Operação tributária de alta complexidade (ICMS/PIS/COFINS/Lucro Real)");
+    } else {
+      missing_data.push("Evidência de Operação Tributária ausente");
+    }
 
-  if (hasComplexitySignal) {
-    opportunity_adherence_score += 15;
-    score_reasons.push("+15: Sinal de complexidade fiscal ou histórico interno de demanda tributária");
-  } else {
-    missing_data.push("Sinal público/histórico de demanda fiscal ausente");
+    // 3. Sinal público ou histórico de complexidade fiscal (+15)
+    const hasComplexitySignal = meta.complexidade_fiscal === true ||
+      metaStr.includes("sintonia") || metaStr.includes("recuperacao") || metaStr.includes("contencioso") ||
+      Boolean(lead.chat_history && (lead.chat_history.includes("tribut") || lead.chat_history.includes("fiscal") || lead.chat_history.includes("imposto")));
+
+    if (hasComplexitySignal) {
+      opportunity_adherence_score += 15;
+      score_reasons.push("+15: Sinal de complexidade fiscal ou histórico interno de demanda tributária");
+    } else {
+      missing_data.push("Sinal público/histórico de demanda fiscal ausente");
+    }
   }
 
   // 4. Histórico de relacionamento / interação (+10) -> relationship_signal
@@ -208,7 +254,8 @@ export function calculateOpportunityScore(
     missing_data.push(`Vínculo de Empresa: ${resolution.company_resolution_status.toUpperCase()}`);
   }
 
-  const contact_curve = classifyContactCurve(lead.cargo);
+  const activeRole = employment.current_role || lead.cargo;
+  const contact_curve = classifyContactCurve(activeRole);
 
   return {
     opportunity_adherence_score,
@@ -225,13 +272,44 @@ export function calculateOpportunityScore(
  */
 export function determineMatchStatus(
   resolution: CompanyResolutionResult,
-  scoreDetails: ScoreDetails
+  scoreDetails: ScoreDetails,
+  employment: EmploymentResolutionOutcome
 ): { match_status: TargetMatchStatus; recommended_action: string } {
+
+  // Regra 4: Perfis aposentados, pausa na carreira, desempregado
+  if (employment.employment_recency_status === "retired") {
+    const endedYear = employment.previous_role_ended_at ? employment.previous_role_ended_at.slice(0, 4) : "";
+    return {
+      match_status: "NÃO ABORDAR",
+      recommended_action: `Contato aposentado; vínculo com a empresa encerrado${endedYear ? ` em ${endedYear}` : ""}.`,
+    };
+  }
+
+  if (employment.employment_recency_status === "career_break") {
+    return {
+      match_status: "NÃO ABORDAR",
+      recommended_action: "Contato em pausa na carreira; vínculo com a empresa encerrado.",
+    };
+  }
+
+  if (employment.employment_recency_status === "unemployed") {
+    return {
+      match_status: "NÃO ABORDAR",
+      recommended_action: "Contato desempregado / em busca de recolocação; sem vínculo ativo.",
+    };
+  }
+
+  if (employment.employment_recency_status === "transition" || employment.employment_recency_status === "historical") {
+    return {
+      match_status: "VALIDAR",
+      recommended_action: "Validar vínculo profissional atual antes de abordar.",
+    };
+  }
 
   if (scoreDetails.opportunity_adherence_score < 0 || scoreDetails.negative_reasons.length > 0) {
     return {
       match_status: "NÃO ABORDAR",
-      recommended_action: "Não abordar - Baixa aderência tributária corporativa evidente.",
+      recommended_action: "Não abordar - Baixa aderência tributária corporativa evidente ou vínculo inativo.",
     };
   }
 
@@ -239,14 +317,15 @@ export function determineMatchStatus(
   const isGoodAdherence = scoreDetails.opportunity_adherence_score >= 20;
   const isGoodContact = scoreDetails.contact_curve === "A" || scoreDetails.contact_curve === "B";
 
-  if (isCompanyConfirmed && isGoodAdherence && isGoodContact) {
+  if (isCompanyConfirmed && isGoodAdherence && isGoodContact && employment.is_current_link_active) {
     return {
       match_status: "PRIORIDADE",
       recommended_action: `Abordar decisor (Curva ${scoreDetails.contact_curve}) para Diagnóstico Receita Sintonia com foco em recuperação/otimização fiscal.`,
     };
   }
 
-  let reasonToValidate = "Validar dados antes de abordar:";
+  // Regra 7 (Regra de Segurança): Se dúvida sobre atualidade do vínculo
+  let reasonToValidate = "Validar vínculo profissional atual antes de abordar:";
   if (!isCompanyConfirmed) {
     reasonToValidate += ` Confirmar vínculo de empresa (${resolution.company_resolution_status}).`;
   }
@@ -261,21 +340,22 @@ export function determineMatchStatus(
 }
 
 /**
- * Avalia um Lead e gera o Match de Oportunidade Completo (Modo Leitura)
+ * Avalia um Lead e gera o Match de Oportunidade Completo com os 8 campos de vínculo atual
  */
 export function evaluateLeadOpportunityMatch(
   lead: LeadInput,
   opportunityId: string = "opp-receita-sintonia"
 ): OpportunityMatchResult {
-  const resolution = resolveCompanyHierarchy(lead);
-  const scoreDetails = calculateOpportunityScore(lead, resolution);
-  const { match_status, recommended_action } = determineMatchStatus(resolution, scoreDetails);
+  const employment = resolveEmploymentDetails(lead);
+  const resolution = resolveCompanyHierarchy(lead, employment);
+  const scoreDetails = calculateOpportunityScore(lead, resolution, employment);
+  const { match_status, recommended_action } = determineMatchStatus(resolution, scoreDetails, employment);
 
   return {
     opportunity_id: opportunityId,
     lead_id: lead.id,
     lead_name: lead.nome,
-    lead_cargo: lead.cargo || null,
+    lead_cargo: employment.current_role || lead.cargo || null,
     company_id: resolution.company_id,
     company_name_snapshot: resolution.company_name_snapshot,
     company_resolution_source: resolution.company_resolution_source,
@@ -291,5 +371,15 @@ export function evaluateLeadOpportunityMatch(
     next_contact_at: null,
     notes: null,
     parceiro_id: lead.parceiro_id || null,
+
+    // 8 Campos Derivados de Recência do Vínculo Profissional (Regras 5 e 6)
+    current_company_name: employment.current_company_name,
+    current_role: employment.current_role,
+    current_employment_status: employment.current_employment_status,
+    current_role_started_at: employment.current_role_started_at,
+    previous_company_name: employment.previous_company_name,
+    previous_role: employment.previous_role,
+    previous_role_ended_at: employment.previous_role_ended_at,
+    employment_recency_status: employment.employment_recency_status,
   };
 }
