@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ToDeAcordo Dashboard</title>
+    <!-- Tailwind via CDN para injetar rápido os estilos se não forem mapeados pelo content script, mas o Vite compila o CSS base. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="dashboard-root"></div>
+    <script type="module" src="/src/dashboard/index.tsx"></script>
+  </body>
+</html>

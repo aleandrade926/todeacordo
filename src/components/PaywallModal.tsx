@@ -1,0 +1,258 @@
+import { useState } from 'react';
+import { addLeadToWaitlist, setProStatus } from '../storage/usageStorage';
+import { useUsage } from '../hooks/useUsage';
+
+interface PaywallModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  attemptedFeature: string;
+  sourceMeetingId?: string;
+}
+
+export const PaywallModal = ({ isOpen, onClose, attemptedFeature, sourceMeetingId }: PaywallModalProps) => {
+  const { count, limit, transcriptCount, transcriptLimit } = useUsage();
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    whatsapp: '',
+    role: '',
+    desired_feature: ''
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [activationCode, setActivationCode] = useState('');
+  const [activationError, setActivationError] = useState('');
+  const [activationSuccess, setActivationSuccess] = useState(false);
+
+  const handleActivateCode = async () => {
+    const code = activationCode.trim().toUpperCase();
+    const validCodes = ['ACORDO29', 'ANDREPRO', 'ALEXANDREPRO', 'VALIDEI2026'];
+    
+    if (validCodes.includes(code)) {
+      setActivationError('');
+      setActivationSuccess(true);
+      await setProStatus(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } else {
+      setActivationError('Código inválido. Verifique com o suporte.');
+      setActivationSuccess(false);
+    }
+  };
+
+  const handleCopyPix = () => {
+    navigator.clipboard.writeText('40130122866');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!isOpen) return null;
+
+  const isUnderLimit = count < limit && transcriptCount < transcriptLimit;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    await addLeadToWaitlist({
+      ...formData,
+      attempted_feature: attemptedFeature,
+      source_meeting_id: sourceMeetingId
+    });
+    setLoading(false);
+    setSubmitted(true);
+    
+    // Auto fecha depois de 3 segundos
+    setTimeout(() => {
+      onClose();
+      setSubmitted(false); // Reseta o estado para a próxima vez
+    }, 3000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header Premium */}
+        <div className="bg-slate-900 px-6 py-6 text-center relative shrink-0">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+          
+          <div className="mx-auto bg-gradient-to-tr from-amber-400 to-amber-200 w-12 h-12 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/20 mb-3">
+            <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+          
+          <h2 className="text-xl font-bold text-white mb-2">ToDeAcordo Pro</h2>
+          
+          <div className="text-indigo-200 text-xs font-semibold mb-2 bg-indigo-900/50 py-1.5 px-3 rounded-full inline-block">
+            📊 Seu Uso: {count}/{limit} Entendimentos | {transcriptCount}/{transcriptLimit} Transcrições
+          </div>
+
+          {isUnderLimit ? (
+            <p className="text-slate-300 text-sm px-4">
+              Você está na versão Freemium e ainda possui cotas disponíveis! Se quiser, pode apoiar o desenvolvimento ou continuar grátis.
+            </p>
+          ) : (
+            <p className="text-slate-300 text-sm px-4">
+              Você atingiu a cota de uso do plano gratuito. Faça uma contribuição para continuar utilizando de forma ilimitada!
+            </p>
+          )}
+        </div>
+
+        {/* Body Formulário / PIX */}
+        <div className="p-6 overflow-y-auto space-y-6">
+          
+          {/* Comparativo de Planos */}
+          <div className="space-y-4">
+            {/* Card Plano Gratuito */}
+            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-bold text-slate-800 text-sm">Plano Gratuito</span>
+                <span className="text-xs bg-slate-200 text-slate-650 px-2 py-0.5 rounded font-bold">Grátis</span>
+              </div>
+              <ul className="text-left text-xs text-slate-600 space-y-1.5">
+                <li className="flex items-center gap-1.5">✓ 3 entendimentos/acordos validados</li>
+                <li className="flex items-center gap-1.5">✓ 20 transcrições/resumos grátis</li>
+                <li className="flex items-center gap-1.5">✓ Link de validação incluído nos 3 entendimentos</li>
+              </ul>
+            </div>
+
+            {/* Card Plano Fundador */}
+            <div className="border border-indigo-200 rounded-xl p-4 bg-indigo-50/50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-wider py-1 px-3 rounded-bl-xl">
+                Recomendado
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-bold text-indigo-900 text-sm">Plano Fundador</span>
+                <span className="text-xs font-black text-indigo-700">R$ 29/mês ou R$ 97/3 meses</span>
+              </div>
+              <ul className="text-left text-xs text-slate-600 space-y-1.5 mb-3">
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Mais transcrições</li>
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Mais entendimentos validados</li>
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Prioridade de acesso no Beta</li>
+                <li className="flex items-center gap-1.5 font-medium text-indigo-950">✓ Apoio direto ao desenvolvimento independente</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Sessão PIX Fundador */}
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 shadow-sm text-center">
+            <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest block mb-1">💸 SEJA UM FUNDADOR (APOIO DIRETO)</span>
+            <p className="text-slate-705 text-xs mb-3 leading-relaxed">
+              O pagamento é feito diretamente para o Pix pessoal da equipe para financiar a hospedagem e evolução do produto sem investidores externos.
+            </p>
+            
+            <div className="bg-white border border-slate-200 rounded-xl py-3 px-4 mb-3">
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Chave Pix (CPF)</div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-base font-black text-indigo-900 select-all font-mono">40130122866</span>
+                <button 
+                  onClick={handleCopyPix}
+                  type="button"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors text-[10px] font-bold border border-indigo-200"
+                >
+                  {copied ? (
+                    <span>✓ Copiado!</span>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                      </svg>
+                      <span>Copiar</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="text-[10px] text-slate-450 mt-1 font-semibold">Nome do Favorecido: André (Equipe de Desenvolvimento)</div>
+            </div>
+            
+            <p className="text-[10px] text-indigo-600 font-medium">
+              💡 Dica: Envie o comprovante no WhatsApp do Alexandre ou Sonia para liberação imediata!
+            </p>
+          </div>
+
+          {submitted ? (
+            <div className="text-center py-4 animate-fadeIn">
+              <div className="text-4xl mb-3">🎉</div>
+              <h3 className="text-lg font-bold text-slate-800 mb-1">Você está na lista de fundadores!</h3>
+              <p className="text-xs text-slate-500">Registramos seu interesse no plano promocional de fundador.</p>
+            </div>
+          ) : (
+            <div className="border-t border-slate-100 pt-4">
+              <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3 text-center">Garantir Preço de Lançamento (R$ 29/mês)</h4>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-650 mb-0.5">Qual recurso você mais precisa?</label>
+                  <select required value={formData.desired_feature || ''} onChange={e => setFormData({...formData, desired_feature: e.target.value})} className="w-full border border-slate-250 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <option value="" disabled>Escolha o que mais faz falta...</option>
+                    <option value="pdf_corporativo">PDF corporativo com minha logo</option>
+                    <option value="rubrica_hash">Rubrica digital e Hash do documento</option>
+                    <option value="historico_cloud">Histórico infinito na nuvem</option>
+                    <option value="remover_marca">Remover a marca ToDeAcordo</option>
+                    <option value="whatsapp_auto">Disparo automático via WhatsApp</option>
+                    <option value="templates">Templates (Agência/Consultoria etc)</option>
+                    <option value="equipe">Acesso para minha equipe</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-650 mb-0.5">Nome</label>
+                    <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border border-slate-250 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nome" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-650 mb-0.5">WhatsApp</label>
+                    <input required type="tel" value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})} className="w-full border border-slate-250 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="(11) 99999-9999" />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg shadow-md mt-2 transition-transform active:scale-95 disabled:bg-slate-400 text-xs"
+                >
+                  {loading ? 'Reservando...' : 'Garantir Vaga no Plano Fundador'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {isUnderLimit && (
+            <button 
+              onClick={onClose}
+              className="w-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-lg text-sm transition-all transform active:scale-95"
+            >
+              Continuar usando grátis
+            </button>
+          )}
+
+          {/* Sessão de Código de Ativação */}
+          <div className="border-t border-slate-100 pt-4 mt-4">
+            <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2 text-center">Ativar com Código</h4>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={activationCode} 
+                onChange={e => setActivationCode(e.target.value)} 
+                placeholder="Código de ativação" 
+                className="flex-1 border border-slate-250 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase font-mono bg-white text-slate-800" 
+              />
+              <button 
+                type="button"
+                onClick={handleActivateCode}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0"
+              >
+                Ativar
+              </button>
+            </div>
+            {activationError && <p className="text-[10px] text-red-500 mt-1.5 font-semibold text-center">{activationError}</p>}
+            {activationSuccess && <p className="text-[10px] text-green-600 mt-1.5 font-semibold text-center">🎉 Acesso PRO ativado! Recarregando...</p>}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};

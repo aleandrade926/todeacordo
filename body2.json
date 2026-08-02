@@ -1,0 +1,19 @@
+{
+  "meeting_id": "teste-producao",
+  "source_platform": "manual",
+  "participants": ["Alexandre", "Cliente"],
+  "transcript_segments": [
+    {
+      "speaker": "Alexandre",
+      "text": "Nós vamos fechar o desenvolvimento do MVP ToDeAcordo por mil reais."
+    },
+    {
+      "speaker": "Cliente",
+      "text": "Confirmo, eu pago os mil reais na sexta-feira."
+    },
+    {
+      "speaker": "Alexandre",
+      "text": "A entrega inicial fica para segunda-feira, mas o escopo final ainda precisa ser confirmado."
+    }
+  ]
+}
